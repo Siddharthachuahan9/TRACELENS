@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TraceLens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <!-- Grain overlay -->
+  <div class="grain-overlay"></div>
+
+  <!-- Amber accent line -->
+  <div class="accent-line"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="gauge good" id="gauge" title="Health: 100%">
+        <svg viewBox="0 0 36 36" class="gauge-svg">
+          <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="gauge-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+        </svg>
+      </div>
+      <div class="brand">
+        <span class="brand-name">TraceLens</span>
+        <span class="brand-env">DEV</span>
+      </div>
+      <div class="live-dot" id="live-dot" title="Capturing"></div>
+    </div>
+    <div class="header-right">
+      <button class="cap-btn capturing" id="capture-btn">
+        <span class="cap-dot"></span>
+        <span class="cap-label">Capturing</span>
+      </button>
+      <button class="icon-btn" id="clear-btn" title="Clear all">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" id="settings-btn" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.2"/><path d="M13 8a5 5 0 01-.4 2l1.1 1.7-1.4 1.4L10.6 12A5 5 0 018 13a5 5 0 01-2-.4l-1.7 1.1-1.4-1.4L4 10.6A5 5 0 013 8a5 5 0 01.4-2L2.3 4.3l1.4-1.4L5.4 4A5 5 0 018 3a5 5 0 012 .4l1.7-1.1 1.4 1.4L12 5.4a5 5 0 01.4 2.6z" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button class="icon-btn" id="shortcuts-btn" title="Keyboard shortcuts (?)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 7h1M7.5 7h1M11 7h1M5 9.5h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Cascade alert -->
+  <div class="cascade-alert" id="cascade-alert">
+    <span class="cascade-icon">⚠</span>
+    <span>Cascade detected — 3+ consecutive slow requests. Possible downstream service degradation.</span>
+  </div>
+
+  <!-- Summary strip -->
+  <div class="summary-strip" id="summary"></div>
+
+  <!-- Activity heatmap -->
+  <div class="heatmap" id="heatmap"></div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input type="text" id="search-input" class="search-input" placeholder="Filter by URL, status, method…">
+    </div>
+    <div class="method-filters">
+      <button class="method-filter-btn" data-method="GET">GET</button>
+      <button class="method-filter-btn" data-method="POST">POST</button>
+      <button class="method-filter-btn" data-method="GQL">GQL</button>
+    </div>
+    <button class="icon-btn bookmark-btn" id="bookmark-filter-btn" title="Show bookmarks only">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-5-3-5 3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline" id="timeline"></div>
+
+  <!-- Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-inner" id="drawer-content"></div>
+  </div>
+
+  <!-- Settings panel -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      <span class="settings-title">Settings</span>
+      <button class="icon-btn" id="settings-close">&times;</button>
+    </div>
+    <div class="settings-body">
+      <label class="setting-row">
+        <span class="setting-label">Slow threshold (ms)</span>
+        <input type="number" id="setting-thresh" class="setting-input" value="800" min="100" max="30000" step="100">
+      </label>
+      <label class="setting-row">
+        <span class="setting-label">API calls only</span>
+        <input type="checkbox" id="setting-api" class="setting-toggle" checked>
+      </label>
+      <label class="setting-row">
+        <span class="setting-label">GraphQL naming</span>
+        <input type="checkbox" id="setting-gql" class="setting-toggle" checked>
+      </label>
+      <label class="setting-row">
+        <span class="setting-label">Cascade detection</span>
+        <input type="checkbox" id="setting-cascade" class="setting-toggle" checked>
+      </label>
+      <label class="setting-row">
+        <span class="setting-label">Token countdown</span>
+        <input type="checkbox" id="setting-token" class="setting-toggle" checked>
+      </label>
+    </div>
+  </div>
+
+  <!-- Shortcuts overlay -->
+  <div class="shortcuts-overlay" id="shortcuts-overlay">
+    <div class="shortcuts-card">
+      <div class="shortcuts-title">Keyboard Shortcuts</div>
+      <div class="shortcut-row"><kbd>J</kbd><span>Next request</span></div>
+      <div class="shortcut-row"><kbd>K</kbd><span>Previous request</span></div>
+      <div class="shortcut-row"><kbd>Space</kbd><span>Open / close drawer</span></div>
+      <div class="shortcut-row"><kbd>Esc</kbd><span>Close drawer / panel</span></div>
+      <div class="shortcut-row"><kbd>B</kbd><span>Stamp bookmark</span></div>
+      <div class="shortcut-row"><kbd>R</kbd><span>Copy cURL</span></div>
+      <div class="shortcut-row"><kbd>C</kbd><span>Copy report</span></div>
+      <div class="shortcut-row"><kbd>?</kbd><span>Toggle this overlay</span></div>
+      <button class="btn btn-outline shortcuts-close" onclick="document.getElementById('shortcuts-overlay').classList.remove('visible')">Close</button>
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
