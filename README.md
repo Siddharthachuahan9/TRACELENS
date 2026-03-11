@@ -88,11 +88,6 @@ TraceLens is a Chrome DevTools extension that gives developers and support engin
 
 ## Screenshot Gallery
 
-### Timeline View
-<!-- Replace with actual screenshot -->
-![Timeline View](https://via.placeholder.com/800x400.png?text=Timeline+View+—+Burst+Grouping+%26+Color-Coded+Status)
-
-*Requests grouped by user action with color-coded status edges, method badges, and duration bars.*
 
 ### Timing Waterfall
 <!-- Replace with actual screenshot -->
