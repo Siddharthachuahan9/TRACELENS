@@ -24,7 +24,8 @@
 ## Screenshot
 
 <!-- Replace with actual screenshot of TraceLens in action -->
-![TraceLens Panel](https://via.placeholder.com/900x500.png?text=TraceLens+DevTools+Panel+Screenshot)
+
+<img width="552" height="822" alt="Screenshot 2026-03-12 at 1 01 39 AM" src="https://github.com/user-attachments/assets/8867d498-0c62-4ade-ab3b-35d3ee51fd6a" />
 
 *TraceLens running inside Chrome DevTools — timeline view with burst grouping, health gauge, and activity heatmap.*
 
@@ -95,19 +96,13 @@ TraceLens is a Chrome DevTools extension that gives developers and support engin
 
 ### Timing Waterfall
 <!-- Replace with actual screenshot -->
-![Timing Waterfall](https://via.placeholder.com/800x300.png?text=Timing+Waterfall+—+DNS%2C+TCP%2C+SSL%2C+Wait%2C+Download)
+<img width="539" height="295" alt="Screenshot 2026-03-12 at 1 02 27 AM" src="https://github.com/user-attachments/assets/9f4555a6-2a60-4627-b740-66c79e49dc9f" />
 
 *Visual breakdown of request phases with the slowest stage highlighted.*
 
-### Token Inspector
+### one click report
 <!-- Replace with actual screenshot -->
-![Token Inspector](https://via.placeholder.com/800x350.png?text=JWT+Token+Inspector+—+Live+Countdown+%26+Claims)
-
-*JWT decoded with live expiry countdown, validity badge, and claim details.*
-
-### AI Diagnosis
-<!-- Replace with actual screenshot -->
-![AI Diagnosis](https://via.placeholder.com/800x200.png?text=Rule-Based+Diagnosis+Engine)
+<img width="541" height="364" alt="Screenshot 2026-03-12 at 1 03 32 AM" src="https://github.com/user-attachments/assets/411807b8-3017-4cf0-a1ea-76f3ad8f67f9" />
 
 *Automated root-cause analysis based on status codes, timing distribution, and auth state.*
 
