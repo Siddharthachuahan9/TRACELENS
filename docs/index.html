@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>TraceLens — See What Your APIs Are Really Doing</title>
+  <meta name="description" content="TraceLens is a read-only Chrome DevTools extension for API debugging. Inspect requests, detect slow endpoints, decode JWTs, analyze timings, and generate incident reports — all inside your browser.">
+  <meta name="keywords" content="api debugger, network request debugger, browser api debugging, api performance debugging, devtools extension, chrome devtools, jwt debugger, api inspector, network analyzer, graphql debugger, rest api debugger, request timing, incident report generator">
+  <meta name="author" content="TraceLens">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tracelens.site">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tracelens.site">
+  <meta property="og:title" content="TraceLens — See What Your APIs Are Really Doing">
+  <meta property="og:description" content="A read-only Chrome DevTools extension for API debugging. Inspect requests, detect slow endpoints, decode JWTs, and generate shareable incident reports.">
+  <meta property="og:site_name" content="TraceLens">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TraceLens — See What Your APIs Are Really Doing">
+  <meta name="twitter:description" content="A read-only Chrome DevTools extension for API debugging. Inspect requests, detect slow endpoints, decode JWTs, and generate shareable incident reports.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="../tracelens/icons/icon48.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Grain texture -->
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <span class="nav-logo">T</span>
+        <span class="nav-name">TraceLens</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#security">Security</a>
+        <a href="https://github.com/Siddharthachuahan9/TRACELENS" class="nav-gh" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">Chrome DevTools Extension</div>
+      <h1 class="hero-title">
+        <span class="hero-trace">TraceLens</span><br>
+        <span class="hero-sub">See what your APIs<br>are really doing.</span>
+      </h1>
+      <p class="hero-desc">
+        A read-only network debugging tool that lives inside Chrome DevTools.<br>
+        Inspect requests. Detect slow endpoints. Decode tokens. Generate reports.<br>
+        No servers. No accounts. No data leaves your browser.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/Siddharthachuahan9/TRACELENS" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+        <a href="#chrome-extension" class="btn btn-outline">
+          Coming Soon on Chrome Web Store
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-val">0</span>
+          <span class="stat-label">External servers</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat">
+          <span class="stat-val">0</span>
+          <span class="stat-label">Dependencies</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat">
+          <span class="stat-val">100%</span>
+          <span class="stat-label">Browser-side</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Product Screenshot -->
+  <section class="screenshot-section">
+    <div class="container">
+      <div class="screenshot-frame">
+        <!-- Replace with actual screenshot -->
+        <div class="screenshot-placeholder">
+          <div class="screenshot-chrome-bar">
+            <span class="chrome-dot"></span>
+            <span class="chrome-dot"></span>
+            <span class="chrome-dot"></span>
+            <span class="chrome-tab">TraceLens</span>
+          </div>
+          <div class="screenshot-body">
+            <div class="mock-header">
+              <span class="mock-brand">TraceLens</span>
+              <span class="mock-badge">DEV</span>
+              <span class="mock-dot"></span>
+            </div>
+            <div class="mock-chips">
+              <span class="mock-chip active">42 Total</span>
+              <span class="mock-chip warn">3 Slow</span>
+              <span class="mock-chip err">1 Error</span>
+              <span class="mock-chip auth">8 Auth</span>
+            </div>
+            <div class="mock-rows">
+              <div class="mock-row">
+                <span class="mock-edge green"></span>
+                <span class="mock-method get">GET</span>
+                <span class="mock-path">/api/v1/users</span>
+                <span class="mock-status ok">200</span>
+                <span class="mock-dur fast">42ms</span>
+              </div>
+              <div class="mock-row">
+                <span class="mock-edge green"></span>
+                <span class="mock-method post">POST</span>
+                <span class="mock-path">/api/v1/orders</span>
+                <span class="mock-status ok">201</span>
+                <span class="mock-dur fast">128ms</span>
+              </div>
+              <div class="mock-row highlight">
+                <span class="mock-edge red"></span>
+                <span class="mock-method get">GET</span>
+                <span class="mock-path">/api/v1/analytics/dashboard</span>
+                <span class="mock-status warn">200</span>
+                <span class="mock-dur slow">2.4s</span>
+              </div>
+              <div class="mock-row">
+                <span class="mock-edge red"></span>
+                <span class="mock-method post">POST</span>
+                <span class="mock-path">/api/v1/auth/refresh</span>
+                <span class="mock-status err">401</span>
+                <span class="mock-dur fast">18ms</span>
+              </div>
+              <div class="mock-row">
+                <span class="mock-edge green"></span>
+                <span class="mock-method gql">GQL</span>
+                <span class="mock-path">GetUserProfile</span>
+                <span class="mock-status ok">200</span>
+                <span class="mock-dur fast">95ms</span>
+              </div>
+            </div>
+            <div class="mock-diagnosis">
+              <span class="mock-diag-icon">&#9670;</span>
+              <span>Server wait dominates at 2180ms (91% of total). Likely a slow DB query or N+1 resolver.</span>
+            </div>
+          </div>
+        </div>
+        <p class="screenshot-caption">TraceLens running inside Chrome DevTools — real-time timeline with burst grouping, diagnosis engine, and performance analysis.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Capabilities</span>
+        <h2 class="section-title">Everything you need to debug APIs.<br>Nothing you don't.</h2>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>Timing Waterfall</h3>
+          <p>Visual breakdown of every request phase — DNS, TCP, SSL, server wait, download. Instantly see where time is spent.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>JWT Token Inspector</h3>
+          <p>Automatically decodes Bearer tokens. Live countdown to expiry. Subject, email, role, and algorithm — all at a glance.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Incident Reports</h3>
+          <p>One-click Jira-ready reports with environment, endpoint, auth status, trace ID, and automated diagnosis.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>Replay & Export</h3>
+          <p>Copy as cURL or fetch(). Export Postman collections. Download HAR files. Share .tracelens snapshots with your team.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 012 2v7"/><path d="M11 18H8a2 2 0 01-2-2V9"/></svg>
+          </div>
+          <h3>GraphQL Aware</h3>
+          <p>Detects GraphQL requests automatically. Extracts operation names. Labels mutations and subscriptions distinctly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h3>Cascade Detection</h3>
+          <p>Alerts when 3+ consecutive slow requests fire — indicating downstream service degradation before it becomes an outage.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          </div>
+          <h3>Request Diff</h3>
+          <p>Compare fast vs slow requests to the same endpoint. See what changed in the response — field by field.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>Diagnosis Engine</h3>
+          <p>Rule-based analysis that reads status codes, timing phases, and auth state — then tells you what went wrong in plain English.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Architecture</span>
+        <h2 class="section-title">How TraceLens works.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Capture</h3>
+            <p>TraceLens hooks into <code>chrome.devtools.network</code> to observe completed HTTP requests. Nothing is modified. Nothing is blocked. Pure observation.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>Enrich</h3>
+            <p>Each request is augmented in real time — JWT tokens are decoded, retry patterns detected, GraphQL operations named, and requests grouped into user-action bursts.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Analyze</h3>
+            <p>The diagnosis engine evaluates each request against dozens of rules — checking status codes, timing distribution, auth state, payload size, and connection phases.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>Present</h3>
+            <p>Results render in a purpose-built interface with a real-time timeline, timing waterfall, token inspector, and request diff — all built with vanilla JS for zero overhead.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">05</div>
+          <div class="step-content">
+            <h3>Export</h3>
+            <p>Share findings as cURL commands, fetch snippets, Postman collections, HAR files, .tracelens snapshots, or Jira-ready incident reports — one click each.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security -->
+  <section class="security" id="security">
+    <div class="container">
+      <div class="security-card">
+        <div class="section-header">
+          <span class="section-tag">Privacy & Security</span>
+          <h2 class="section-title">Your data never leaves your browser.</h2>
+        </div>
+        <p class="security-desc">TraceLens is architecturally incapable of exfiltrating data. It requests only the <code>storage</code> permission — for saving your settings. There are no content scripts, no remote API calls, no analytics, no telemetry.</p>
+        <div class="security-grid">
+          <div class="security-item">
+            <div class="security-check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <strong>Read-only</strong>
+              <p>Cannot modify network traffic. No webRequest permission. No declarativeNetRequest.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <strong>No injection</strong>
+              <p>No content scripts. No page modification. No scripting permission.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <strong>No phone home</strong>
+              <p>Zero external network calls. No analytics. No telemetry. No tracking.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <strong>Memory only</strong>
+              <p>Captured data lives in browser memory. Close the tab — it's gone. Nothing persisted to disk.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <strong>Open source</strong>
+              <p>Every line of code is on GitHub. Audit it yourself. No obfuscation. No minification.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <strong>Minimal permissions</strong>
+              <p>Only <code>storage</code> — used exclusively for saving your settings preferences.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="use-cases" id="use-cases">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Who It's For</span>
+        <h2 class="section-title">Built for people who debug with DevTools open.</h2>
+      </div>
+      <div class="use-case-grid">
+        <div class="use-case">
+          <h3>Frontend Developers</h3>
+          <ul>
+            <li>Debug slow API calls during development</li>
+            <li>Inspect JWT tokens without leaving the browser</li>
+            <li>Copy cURL commands to replay in terminal</li>
+            <li>Compare request performance before and after changes</li>
+          </ul>
+        </div>
+        <div class="use-case">
+          <h3>Support Engineers</h3>
+          <ul>
+            <li>Generate incident reports with one click</li>
+            <li>Share .tracelens snapshots with backend teams</li>
+            <li>Identify client vs server vs network issues</li>
+            <li>Check token expiry without asking for credentials</li>
+          </ul>
+        </div>
+        <div class="use-case">
+          <h3>QA Engineers</h3>
+          <ul>
+            <li>Verify API response payloads during testing</li>
+            <li>Detect retry storms and cascading failures</li>
+            <li>Monitor request timing across test scenarios</li>
+            <li>Export HAR files for detailed bug reports</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyboard Shortcuts -->
+  <section class="shortcuts">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Workflow</span>
+        <h2 class="section-title">Keyboard-first. Like your editor.</h2>
+      </div>
+      <div class="shortcuts-grid">
+        <div class="shortcut"><kbd>J</kbd><span>Next request</span></div>
+        <div class="shortcut"><kbd>K</kbd><span>Previous request</span></div>
+        <div class="shortcut"><kbd>Space</kbd><span>Open / close drawer</span></div>
+        <div class="shortcut"><kbd>Esc</kbd><span>Close panel</span></div>
+        <div class="shortcut"><kbd>B</kbd><span>Stamp bookmark</span></div>
+        <div class="shortcut"><kbd>R</kbd><span>Copy cURL</span></div>
+        <div class="shortcut"><kbd>C</kbd><span>Copy report</span></div>
+        <div class="shortcut"><kbd>?</kbd><span>Show shortcuts</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GitHub Section -->
+  <section class="github-section" id="github">
+    <div class="container">
+      <div class="github-card">
+        <div class="github-icon">
+          <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </div>
+        <h2>Explore the source code on GitHub</h2>
+        <p>TraceLens is fully open source. No build step, no dependencies, no secrets.<br>Read every line. Fork it. Improve it.</p>
+        <a href="https://github.com/Siddharthachuahan9/TRACELENS" class="btn btn-primary" target="_blank" rel="noopener">View Repository</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chrome Extension Section -->
+  <section class="chrome-section" id="chrome-extension">
+    <div class="container">
+      <div class="chrome-card">
+        <div class="chrome-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+        </div>
+        <h2>Chrome Extension</h2>
+        <p>TraceLens will soon be available on the Chrome Web Store.<br>Join early users by exploring the project on GitHub.</p>
+        <button class="btn btn-outline" disabled>Coming Soon</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="nav-logo">T</span>
+          <span class="nav-name">TraceLens</span>
+        </div>
+        <p class="footer-desc">See what your APIs are really doing.<br>Open source. Read-only. Browser-native.</p>
+        <div class="footer-links">
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS/issues" target="_blank" rel="noopener">Issues</a>
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS#contributing" target="_blank" rel="noopener">Contributing</a>
+        </div>
+        <p class="footer-copy">MIT License</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
