@@ -47,6 +47,10 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+function shellEscape(s) {
+  return s.replace(/'/g, "'\\''");
+}
+
 // --------------- Status Codes ---------------
 const STATUS_CODES = {
   200: 'OK — request succeeded',
@@ -282,12 +286,12 @@ function downloadJSON(obj, filename) {
 
 // --------------- Replay Generators ---------------
 function toCurl(entry) {
-  let cmd = `curl -X ${entry.method} '${entry.url}'`;
+  let cmd = `curl -X ${shellEscape(entry.method)} '${shellEscape(entry.url)}'`;
   entry.reqHeaders?.forEach(h => {
-    cmd += ` \\\n  -H '${h.name}: ${h.value}'`;
+    cmd += ` \\\n  -H '${shellEscape(h.name)}: ${shellEscape(h.value)}'`;
   });
   if (entry.reqBody) {
-    cmd += ` \\\n  -d '${entry.reqBody.replace(/'/g, "\\'")}'`;
+    cmd += ` \\\n  -d '${shellEscape(entry.reqBody)}'`;
   }
   return cmd;
 }
@@ -296,7 +300,7 @@ function toFetch(entry) {
   const opts = { method: entry.method, headers: {} };
   entry.reqHeaders?.forEach(h => { opts.headers[h.name] = h.value; });
   if (entry.reqBody) opts.body = entry.reqBody;
-  return `fetch('${entry.url}', ${JSON.stringify(opts, null, 2)})
+  return `fetch(${JSON.stringify(entry.url)}, ${JSON.stringify(opts, null, 2)})
   .then(r => r.json())
   .then(console.log)
   .catch(console.error);`;
@@ -619,7 +623,7 @@ function renderTimeline() {
 
       html += `<div class="req-row ${selClass}" data-id="${e.id}">
         <div class="req-edge ${edgeClass}"></div>
-        <div class="req-method method-${e._methodLabel.toLowerCase()}">${e._methodLabel}</div>
+        <div class="req-method method-${e._methodLabel.toLowerCase().replace(/[^a-z]/g, '')}">${escapeHtml(e._methodLabel)}</div>
         <div class="req-path">${escapeHtml(e._displayName)}${authBadge}</div>
         <div class="req-meta">
           <span class="req-status ${statusClass}" title="${STATUS_CODES[e.status] || ''}">${e.status}</span>
@@ -755,11 +759,11 @@ function renderOverviewTab(e) {
     <div class="ov-section">
       <div class="ov-url">${escapeHtml(e.url)}</div>
       <div class="ov-grid">
-        <div class="ov-cell"><span class="ov-label">Method</span><span class="ov-val">${e.method}</span></div>
+        <div class="ov-cell"><span class="ov-label">Method</span><span class="ov-val">${escapeHtml(e.method)}</span></div>
         <div class="ov-cell"><span class="ov-label">Status</span><span class="ov-val status-badge ${e.status >= 400 ? 'status-err' : 'status-ok'}" title="${STATUS_CODES[e.status] || ''}">${e.status}</span></div>
         <div class="ov-cell"><span class="ov-label">Duration</span><span class="ov-val">${formatDur(e.dur)}</span></div>
         <div class="ov-cell"><span class="ov-label">Size</span><span class="ov-val">${formatSize(e.size)}</span></div>
-        <div class="ov-cell"><span class="ov-label">Content-Type</span><span class="ov-val">${e.mimeType || '—'}</span></div>
+        <div class="ov-cell"><span class="ov-label">Content-Type</span><span class="ov-val">${escapeHtml(e.mimeType || '—')}</span></div>
         ${e._isGraphQL ? `<div class="ov-cell"><span class="ov-label">GraphQL Op</span><span class="ov-val">${escapeHtml(e._displayName)}</span></div>` : ''}
       </div>
     </div>
