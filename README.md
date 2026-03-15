@@ -24,9 +24,7 @@
 
 ## Screenshot
 
-<!-- Replace with actual screenshot of TraceLens in action -->
-
-<img width="552" height="822" alt="Screenshot 2026-03-12 at 1 01 39 AM" src="https://github.com/user-attachments/assets/8867d498-0c62-4ade-ab3b-35d3ee51fd6a" />
+<img width="552" height="822" alt="Screenshot 2026-03-12 at 1 01 39 AM" src="https://github.com/user-attachments/assets/8867d498-0c62-4ade-ab3b-35d3ee51fd6a" />
 
 *TraceLens running inside Chrome DevTools — timeline view with burst grouping, health gauge, and activity heatmap.*
 
@@ -37,6 +35,8 @@
 TraceLens is a Chrome DevTools extension that gives developers and support engineers instant visibility into API behavior. It captures network requests in real time, groups them by user action, diagnoses performance issues, decodes JWTs, detects cascading failures, and generates shareable incident reports — all without leaving the browser.
 
 **Zero infrastructure. Zero dependencies. Zero data exfiltration.**
+
+> Live at **[tracelens.site](https://tracelens.site)** — hosted on Cloudflare Workers.
 
 ---
 
@@ -55,9 +55,11 @@ TraceLens is a Chrome DevTools extension that gives developers and support engin
 - **Activity heatmap** — 60-second rolling heatmap showing request density over time
 - **Health gauge** — Real-time health score based on error rate and slow request ratio
 - **Cascade detection** — Alerts when 3+ consecutive requests exceed the slow threshold
+- **Performance baseline** — Compare current requests against a saved baseline snapshot
 
 ### Token & Auth
 - **JWT decoding** — Automatically extracts and decodes Bearer tokens from Authorization headers
+- **Token masking** — Raw tokens are masked by default (`abc••••••xyz`) with a Reveal/Hide toggle
 - **Live countdown** — Real-time countdown bar showing token time-to-expiry
 - **Claim inspection** — Subject, email, role, algorithm, issued-at, and expiry fields
 - **Expiry warnings** — Visual badge on each request showing token validity status
@@ -89,16 +91,13 @@ TraceLens is a Chrome DevTools extension that gives developers and support engin
 
 ## Screenshot Gallery
 
-
 ### Timing Waterfall
-<!-- Replace with actual screenshot -->
-<img width="539" height="295" alt="Screenshot 2026-03-12 at 1 02 27 AM" src="https://github.com/user-attachments/assets/9f4555a6-2a60-4627-b740-66c79e49dc9f" />
+<img width="539" height="295" alt="Screenshot 2026-03-12 at 1 02 27 AM" src="https://github.com/user-attachments/assets/9f4555a6-2a60-4627-b740-66c79e49dc9f" />
 
 *Visual breakdown of request phases with the slowest stage highlighted.*
 
-### one click report
-<!-- Replace with actual screenshot -->
-<img width="541" height="364" alt="Screenshot 2026-03-12 at 1 03 32 AM" src="https://github.com/user-attachments/assets/411807b8-3017-4cf0-a1ea-76f3ad8f67f9" />
+### One-Click Report
+<img width="541" height="364" alt="Screenshot 2026-03-12 at 1 03 32 AM" src="https://github.com/user-attachments/assets/411807b8-3017-4cf0-a1ea-76f3ad8f67f9" />
 
 *Automated root-cause analysis based on status codes, timing distribution, and auth state.*
 
@@ -155,10 +154,6 @@ TraceLens is a Chrome DevTools extension that gives developers and support engin
 
 > Coming soon. Star the repo to get notified.
 
-### Landing Page
-
-Visit **[tracelens.site](https://tracelens.site)** for the project landing page, hosted on Cloudflare Workers.
-
 ---
 
 ## Usage
@@ -181,6 +176,7 @@ Click the summary chips to filter the timeline:
 - **Search** — Filter by URL, status code, method, or GraphQL operation name
 - **Method buttons** — Filter by GET, POST, or GQL
 - **Bookmark icon** — Show only bookmarked entries
+- **Domain grouping** — Group requests by origin domain
 
 ### Drawer Tabs
 
@@ -190,7 +186,7 @@ Click any request to open the detail drawer:
 |-----|-------------|
 | **Overview** | URL, method, status, duration, size, headers, formatted response body, and rule-based diagnosis |
 | **Timing** | Waterfall visualization of DNS → TCP → SSL → Server Wait → Download |
-| **Token** | JWT decode with live countdown, validity status, and decoded claims |
+| **Token** | JWT decode with masked raw token (Reveal/Hide), live countdown, validity status, and decoded claims |
 | **Replay** | cURL, fetch(), and Postman collection with copy buttons. Export as `.tracelens` or `.har` |
 | **Diff** | Compare fast vs slow requests to the same endpoint with response body diff |
 | **Report** | Jira-ready incident report with all relevant context |
@@ -208,6 +204,8 @@ Click any request to open the detail drawer:
 | `B` | Stamp a bookmark |
 | `R` | Copy cURL command |
 | `C` | Copy incident report |
+| `D` | Toggle domain grouping |
+| `T` | Toggle light/dark theme |
 | `?` | Toggle shortcuts overlay |
 
 ---
@@ -223,6 +221,7 @@ Click the gear icon to configure:
 | GraphQL naming | On | Show operation names instead of paths |
 | Cascade detection | On | Alert on 3+ consecutive slow requests |
 | Token countdown | On | Show live JWT expiry badges |
+| Performance baseline | Off | Compare requests against a saved baseline snapshot |
 
 Settings persist across sessions via `chrome.storage.local`.
 
@@ -232,18 +231,18 @@ Settings persist across sessions via `chrome.storage.local`.
 
 ```
 tracelens/
-├── manifest.json        # Manifest V3 — declares DevTools page + storage permission
-├── devtools.html         # Entry point — loads devtools.js
-├── devtools.js           # Creates the TraceLens panel in Chrome DevTools
-├── background.js         # Minimal service worker (MV3 compliance, no logic)
-├── panel.html            # Main UI structure — header, timeline, drawer, settings
-├── panel.css             # Complete design system — dark theme, amber accent
-├── panel.js              # All logic — capture, analysis, rendering, export (1200 lines)
-├── generate-icons.js     # Node script to generate placeholder PNG icons
+├── manifest.json        # Manifest V3 — DevTools page, storage permission, CSP
+├── devtools.html        # Entry point — registers the TraceLens DevTools panel
+├── devtools.js          # Creates the TraceLens panel in Chrome DevTools
+├── background.js        # MV3 service worker stub
+├── panel.html           # Main UI structure — header, timeline, drawer, settings
+├── panel.css            # Complete design system — dark theme, amber accent
+├── panel.js             # All logic — capture, analysis, rendering, export
+├── generate-icons.js    # Node script to generate placeholder PNG icons
 └── icons/
-    ├── icon16.png        # Toolbar icon
-    ├── icon48.png        # Extensions page icon
-    └── icon128.png       # Chrome Web Store icon
+    ├── icon16.png       # Toolbar icon
+    ├── icon48.png       # Extensions page icon
+    └── icon128.png      # Chrome Web Store icon
 ```
 
 ### Technology Stack
@@ -256,6 +255,7 @@ tracelens/
 | Fonts | Barlow / Barlow Condensed / Fira Code (Google Fonts) |
 | Build | None — no npm, no bundler, no transpiler |
 | Storage | `chrome.storage.local` for settings persistence |
+| Hosting | Cloudflare Workers (tracelens.site) |
 
 ### Key Design Decisions
 
@@ -279,19 +279,17 @@ TraceLens is designed to be **strictly read-only**:
 | Permissions required | `storage` only — for saving settings |
 | Data persistence | Settings only — captured requests are held in memory and cleared on close |
 
-The only Chrome API used beyond `storage` is `chrome.devtools.network.onRequestFinished` (read-only network observation) and `chrome.devtools.inspectedWindow.eval('window.location.href')` (hardcoded read-only string to get the current page URL).
+The only Chrome API used beyond `storage` is `chrome.devtools.network.onRequestFinished` (read-only network observation) and `chrome.devtools.inspectedWindow.eval('window.location.href')` (read-only, hardcoded string to get the current page URL).
 
 **All captured data stays in browser memory and is never written to disk or sent anywhere.**
 
 ### Security Hardening
 
-The following security improvements have been applied:
-
 | Area | Improvement |
 |------|-------------|
-| **JWT tokens** | Raw tokens are masked by default (`abc••••••xyz`) with an explicit Reveal/Hide toggle — prevents accidental token exposure in screenshots |
-| **Content Security Policy** | `manifest.json` enforces `script-src 'self'` — blocks any inline script execution in extension pages |
-| **Inline event handlers** | All `onclick` attributes removed from HTML — replaced with `addEventListener` in JS, CSP-compliant |
+| **JWT tokens** | Raw tokens are masked by default (`abc••••••xyz`) with an explicit Reveal/Hide toggle — prevents accidental credential exposure in screenshots |
+| **Content Security Policy** | `manifest.json` enforces `script-src 'self'; object-src 'none'` — blocks any inline script execution in extension pages |
+| **Inline event handlers** | All `onclick` attributes removed from HTML — replaced with `addEventListener` in JS |
 | **Import validation** | Imported `.tracelens` snapshot files are type-checked before any data is merged into app state |
 
 ---
@@ -326,14 +324,14 @@ The following security improvements have been applied:
 ## Roadmap
 
 - [ ] Chrome Web Store publication
-- [ ] Side panel support (view requests without opening DevTools)
+- [ ] Team sharing via URL-encoded snapshots
+- [ ] Side panel support
 - [x] WebSocket frame inspection
 - [x] Request grouping by domain
 - [x] Performance regression alerts (compare against baseline)
 - [x] Import `.tracelens` snapshots for offline viewing
 - [x] Dark/light theme toggle
 - [x] Request annotation and notes
-- [ ] Team sharing via URL-encoded snapshots
 
 ---
 
