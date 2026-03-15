@@ -326,7 +326,7 @@ The following security improvements have been applied:
 ## Roadmap
 
 - [ ] Chrome Web Store publication
-- [x] Side panel support (view requests without opening DevTools)
+- [ ] Side panel support (view requests without opening DevTools)
 - [x] WebSocket frame inspection
 - [x] Request grouping by domain
 - [x] Performance regression alerts (compare against baseline)
