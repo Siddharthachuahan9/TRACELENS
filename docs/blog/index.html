@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog — TraceLens | API Debugging Guides & DevTools Tips</title>
+  <meta name="description" content="Guides, comparisons, and tips on API debugging, Chrome DevTools extensions, JWT tokens, network performance, and developer tooling from the TraceLens team.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tracelens.site/blog/">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="/favicon-128.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tracelens.site/blog/">
+  <meta property="og:title" content="Blog — TraceLens | API Debugging Guides & DevTools Tips">
+  <meta property="og:description" content="Guides, comparisons, and tips on API debugging, Chrome DevTools extensions, JWT tokens, and network performance.">
+  <meta property="og:image" content="https://tracelens.site/favicon-128.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .blog-hero { padding: 100px 0 60px; text-align: center; }
+    .blog-hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; color: var(--cW); margin-bottom: 16px; }
+    .blog-hero p { color: var(--c8); font-size: 1.1rem; max-width: 540px; margin: 0 auto; }
+    .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 28px; padding-bottom: 100px; }
+    .blog-card { background: var(--c2); border: 1px solid var(--c3); border-radius: 12px; padding: 28px; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; }
+    .blog-card:hover { border-color: var(--amber); transform: translateY(-2px); }
+    .blog-tag { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--amber); background: var(--amber-dim); border-radius: 4px; padding: 3px 8px; margin-bottom: 14px; }
+    .blog-card h2 { font-size: 1.15rem; font-weight: 600; color: var(--cW); line-height: 1.4; margin-bottom: 10px; }
+    .blog-card p { font-size: .9rem; color: var(--c8); line-height: 1.6; flex: 1; }
+    .blog-meta { display: flex; align-items: center; gap: 12px; margin-top: 20px; font-size: .8rem; color: var(--c7); }
+    .blog-read-more { margin-top: 18px; color: var(--amber); font-size: .88rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .blog-read-more::after { content: '→'; transition: transform .2s; }
+    .blog-card:hover .blog-read-more::after { transform: translateX(4px); }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <span class="nav-logo">T</span>
+        <span class="nav-name">TraceLens</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#how-it-works">How It Works</a>
+        <a href="/blog/" style="color:var(--amber)">Blog</a>
+        <a href="https://github.com/Siddharthachuahan9/TRACELENS" class="nav-gh" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="blog-hero">
+      <h1>TraceLens Blog</h1>
+      <p>Guides, comparisons, and deep dives on API debugging, DevTools, JWT tokens, and network performance.</p>
+    </div>
+
+    <div class="blog-grid">
+      <a href="/blog/tracelens-vs-requestly-proxyman-charles-api-debugger/" class="blog-card">
+        <span class="blog-tag">Comparison</span>
+        <h2>TraceLens vs Requestly vs Proxyman vs Charles Proxy: Best API Debugger in 2026</h2>
+        <p>A head-to-head comparison of the most popular API debugging tools. Which one should you use — and when? We break down features, pricing, privacy, and the key differences that matter.</p>
+        <div class="blog-meta">
+          <span>March 15, 2026</span>
+          <span>·</span>
+          <span>8 min read</span>
+        </div>
+        <span class="blog-read-more">Read article</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="nav-logo">T</span>
+          <span class="nav-name">TraceLens</span>
+        </div>
+        <p class="footer-desc">See what your APIs are really doing.<br>Open source. Read-only. Browser-native.</p>
+        <div class="footer-links">
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS" target="_blank" rel="noopener">GitHub</a>
+          <a href="/blog/">Blog</a>
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS/issues" target="_blank" rel="noopener">Issues</a>
+        </div>
+        <p class="footer-copy">MIT License</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
