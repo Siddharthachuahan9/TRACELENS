@@ -3,7 +3,7 @@
    ============================================================ */
 
 :root {
-  /* Dark scale */
+  /* Dark scale (default) */
   --c0: #0a0b0d;
   --c1: #0f1114;
   --c2: #14161a;
@@ -44,6 +44,31 @@
   --r-sm: 4px;
   --r-md: 6px;
   --r-lg: 10px;
+}
+
+/* Light theme */
+body.theme-light {
+  --c0: #f5f6f8;
+  --c1: #ebedf0;
+  --c2: #e0e3e8;
+  --c3: #d1d5dc;
+  --c4: #c0c5ce;
+  --c5: #a8aeb8;
+  --c6: #8891a0;
+  --c7: #6b7280;
+  --c8: #4e5563;
+  --c9: #374151;
+  --cA: #1f2937;
+  --cW: #111827;
+
+  --amber: #c07810;
+  --amber-dim: rgba(192, 120, 16, 0.12);
+  --amber-glow: rgba(192, 120, 16, 0.25);
+
+  --green: #16a34a;
+  --yellow: #ca8a04;
+  --red: #dc2626;
+  --blue: #2563eb;
 }
 
 /* Reset */
@@ -1340,4 +1365,191 @@ kbd {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--c6);
+}
+
+/* ============================================================
+   Light theme adjustments
+   ============================================================ */
+body.theme-light .grain-overlay { opacity: 0.015; }
+body.theme-light .gauge-bg { stroke: var(--c3); }
+body.theme-light kbd { border-color: var(--c4); }
+
+/* ============================================================
+   Domain Group Headers
+   ============================================================ */
+.domain-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 6px var(--sp-lg);
+  background: var(--c2);
+  border-top: 1px solid var(--c4);
+  border-bottom: 1px solid var(--c3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.domain-group-header:hover { background: var(--c3); }
+
+.domain-group-toggle {
+  font-size: 10px;
+  color: var(--c8);
+  transition: transform 0.2s;
+}
+
+.domain-group-toggle.collapsed { transform: rotate(-90deg); }
+
+.domain-group-name {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+  letter-spacing: 0.3px;
+}
+
+.domain-group-count {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--c4);
+  color: var(--c9);
+}
+
+.domain-group-stats {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.domain-stat {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.domain-stat-slow { background: rgba(240, 180, 41, 0.15); color: var(--yellow); }
+.domain-stat-err { background: rgba(224, 82, 82, 0.15); color: var(--red); }
+.domain-stat-avg { background: rgba(91, 138, 240, 0.1); color: var(--blue); }
+
+/* ============================================================
+   Annotation / Notes
+   ============================================================ */
+.note-section {
+  margin-top: var(--sp-md);
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: var(--sp-sm);
+  background: var(--c2);
+  border: 1px solid var(--c4);
+  border-radius: var(--r-sm);
+  color: var(--cW);
+  font-family: var(--font-body);
+  font-size: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.note-textarea:focus { border-color: var(--amber); }
+
+.note-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Performance Baseline Alert
+   ============================================================ */
+.perf-alert {
+  display: none;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-lg);
+  background: rgba(240, 180, 41, 0.1);
+  border-bottom: 1px solid rgba(240, 180, 41, 0.25);
+  color: var(--yellow);
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+.perf-alert.visible { display: flex; }
+
+.perf-alert-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--c8);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.perf-alert-dismiss:hover { color: var(--cW); }
+
+/* ============================================================
+   WebSocket Frames
+   ============================================================ */
+.ws-frame-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 4px var(--sp-md);
+  border-bottom: 1px solid var(--c2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.ws-dir {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.ws-dir-send { background: rgba(91, 138, 240, 0.15); color: var(--blue); }
+.ws-dir-recv { background: rgba(56, 193, 114, 0.15); color: var(--green); }
+
+.ws-data {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cA);
+}
+
+.ws-time {
+  color: var(--c8);
+  flex-shrink: 0;
+}
+
+.ws-badge {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Side Panel
+   ============================================================ */
+.sidepanel-notice {
+  padding: var(--sp-lg);
+  text-align: center;
+  color: var(--c9);
+  font-size: 12px;
 }

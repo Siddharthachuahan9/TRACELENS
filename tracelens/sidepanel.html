@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TraceLens — Side Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="panel.css">
+  <style>
+    .sidepanel-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      padding: var(--sp-sm) var(--sp-md);
+      background: var(--c1);
+      border-bottom: 1px solid var(--c3);
+    }
+    .sidepanel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--sp-sm);
+    }
+    .sp-entry {
+      padding: var(--sp-sm);
+      border-bottom: 1px solid var(--c2);
+      cursor: pointer;
+    }
+    .sp-entry:hover { background: var(--c2); }
+    .sp-method {
+      font-family: var(--font-heading);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .sp-path {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--cA);
+    }
+    .sp-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+      font-size: 10px;
+      color: var(--c8);
+    }
+    .sp-status {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      padding: 0 4px;
+      border-radius: 2px;
+    }
+    .sp-empty {
+      text-align: center;
+      padding: 40px var(--sp-lg);
+      color: var(--c8);
+    }
+  </style>
+</head>
+<body>
+  <div class="accent-line"></div>
+  <div class="sidepanel-header">
+    <span class="brand-name" style="font-family:var(--font-heading);font-weight:700;font-size:14px;color:var(--amber)">TraceLens</span>
+    <span class="brand-env">SIDE PANEL</span>
+  </div>
+  <div class="sidepanel-body" id="sp-body">
+    <div class="sp-empty">Open DevTools to start capturing requests. The side panel mirrors captured traffic in real-time.</div>
+  </div>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

@@ -39,6 +39,9 @@
       <button class="icon-btn" id="clear-btn" title="Clear all">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
+      <button class="icon-btn" id="theme-btn" title="Toggle light/dark theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" id="theme-icon"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
       <button class="icon-btn" id="settings-btn" title="Settings">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.2"/><path d="M13 8a5 5 0 01-.4 2l1.1 1.7-1.4 1.4L10.6 12A5 5 0 018 13a5 5 0 01-2-.4l-1.7 1.1-1.4-1.4L4 10.6A5 5 0 013 8a5 5 0 01.4-2L2.3 4.3l1.4-1.4L5.4 4A5 5 0 018 3a5 5 0 012 .4l1.7-1.1 1.4 1.4L12 5.4a5 5 0 01.4 2.6z" stroke="currentColor" stroke-width="1.2"/></svg>
       </button>
@@ -52,6 +55,13 @@
   <div class="cascade-alert" id="cascade-alert">
     <span class="cascade-icon">⚠</span>
     <span>Cascade detected — 3+ consecutive slow requests. Possible downstream service degradation.</span>
+  </div>
+
+  <!-- Performance regression alert -->
+  <div class="perf-alert" id="perf-alert">
+    <span class="cascade-icon">⚠</span>
+    <span id="perf-alert-text">Performance regression detected</span>
+    <button class="perf-alert-dismiss" id="perf-alert-dismiss">&times;</button>
   </div>
 
   <!-- Summary strip -->
@@ -74,6 +84,13 @@
     <button class="icon-btn bookmark-btn" id="bookmark-filter-btn" title="Show bookmarks only">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-5-3-5 3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
     </button>
+    <button class="icon-btn" id="domain-group-btn" title="Group by domain">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M2 8h12M8 2c2 2 3 4 3 6s-1 4-3 6M8 2c-2 2-3 4-3 6s1 4 3 6" stroke="currentColor" stroke-width="1.2"/></svg>
+    </button>
+    <button class="icon-btn" id="import-btn" title="Import .tracelens snapshot">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <input type="file" id="import-file" accept=".tracelens" style="display:none">
   </div>
 
   <!-- Timeline -->
@@ -111,6 +128,18 @@
         <span class="setting-label">Token countdown</span>
         <input type="checkbox" id="setting-token" class="setting-toggle" checked>
       </label>
+      <label class="setting-row">
+        <span class="setting-label">Performance baseline</span>
+        <input type="checkbox" id="setting-baseline" class="setting-toggle">
+      </label>
+      <div class="setting-row" id="baseline-thresh-row" style="display:none">
+        <span class="setting-label">Regression % threshold</span>
+        <input type="number" id="setting-baseline-pct" class="setting-input" value="50" min="10" max="500" step="10">
+      </div>
+      <label class="setting-row">
+        <span class="setting-label">Save baseline</span>
+        <button class="btn btn-outline" id="save-baseline-btn" style="padding:3px 10px;font-size:11px">Snapshot</button>
+      </label>
     </div>
   </div>
 
@@ -125,6 +154,8 @@
       <div class="shortcut-row"><kbd>B</kbd><span>Stamp bookmark</span></div>
       <div class="shortcut-row"><kbd>R</kbd><span>Copy cURL</span></div>
       <div class="shortcut-row"><kbd>C</kbd><span>Copy report</span></div>
+      <div class="shortcut-row"><kbd>D</kbd><span>Toggle domain grouping</span></div>
+      <div class="shortcut-row"><kbd>T</kbd><span>Toggle light/dark theme</span></div>
       <div class="shortcut-row"><kbd>?</kbd><span>Toggle this overlay</span></div>
       <button class="btn btn-outline shortcuts-close" onclick="document.getElementById('shortcuts-overlay').classList.remove('visible')">Close</button>
     </div>

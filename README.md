@@ -310,13 +310,13 @@ The only Chrome API used beyond `storage` is `chrome.devtools.network.onRequestF
 ## Roadmap
 
 - [ ] Chrome Web Store publication
-- [ ] Side panel support (view requests without opening DevTools)
-- [ ] WebSocket frame inspection
-- [ ] Request grouping by domain
-- [ ] Performance regression alerts (compare against baseline)
-- [ ] Import `.tracelens` snapshots for offline viewing
-- [ ] Dark/light theme toggle
-- [ ] Request annotation and notes
+- [x] Side panel support (view requests without opening DevTools)
+- [x] WebSocket frame inspection
+- [x] Request grouping by domain
+- [x] Performance regression alerts (compare against baseline)
+- [x] Import `.tracelens` snapshots for offline viewing
+- [x] Dark/light theme toggle
+- [x] Request annotation and notes
 - [ ] Team sharing via URL-encoded snapshots
 
 ---

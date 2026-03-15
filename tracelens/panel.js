@@ -20,6 +20,14 @@ let API_ONLY = true;
 let GQL_NAMES = true;
 let CASCADE_ENABLED = true;
 let TOKEN_COUNTDOWN = true;
+let THEME = 'dark';
+let DOMAIN_GROUPING = false;
+let BASELINE_ENABLED = false;
+let BASELINE_PCT = 50;
+let performanceBaseline = {}; // path -> { avg, count }
+let annotations = {}; // entryId -> note text
+let collapsedDomains = new Set();
+let wsEntries = []; // WebSocket frames
 
 const BURST_GAP = 800;
 
@@ -352,15 +360,38 @@ Exported via TraceLens v2.0`;
 // --------------- Settings Persistence ---------------
 function loadSettings() {
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-    chrome.storage.local.get(['thresh', 'apiOnly', 'gqlNames', 'cascade', 'tokenCountdown'], (s) => {
+    chrome.storage.local.get(['thresh', 'apiOnly', 'gqlNames', 'cascade', 'tokenCountdown', 'theme', 'baselineEnabled', 'baselinePct', 'performanceBaseline', 'annotations'], (s) => {
       THRESH = s.thresh || 800;
       API_ONLY = s.apiOnly !== false;
       GQL_NAMES = s.gqlNames !== false;
       CASCADE_ENABLED = s.cascade !== false;
       TOKEN_COUNTDOWN = s.tokenCountdown !== false;
+      THEME = s.theme || 'dark';
+      BASELINE_ENABLED = !!s.baselineEnabled;
+      BASELINE_PCT = s.baselinePct || 50;
+      performanceBaseline = s.performanceBaseline || {};
+      annotations = s.annotations || {};
+      applyTheme();
       applySettingsToUI();
     });
   }
+}
+
+// --------------- Theme Toggle ---------------
+function applyTheme() {
+  document.body.classList.toggle('theme-light', THEME === 'light');
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.innerHTML = THEME === 'light'
+      ? '<path d="M8 12a4 4 0 110-8 4 4 0 010 8zM8 0a1 1 0 011 1v1a1 1 0 01-2 0V1a1 1 0 011-1z" fill="currentColor"/>'
+      : '<circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>';
+  }
+}
+
+function toggleTheme() {
+  THEME = THEME === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  saveSetting('theme', THEME);
 }
 
 function saveSetting(key, val) {
@@ -376,15 +407,27 @@ function addRequest(entry) {
   entry._displayName = getDisplayName(entry);
   entry._methodLabel = getMethodLabel(entry);
   entry._isGraphQL = isGraphQL(entry);
+  captureWebSocketUpgrade(entry);
 
   allEntries.push(entry);
   addToBurst(entry);
+
+  // Relay to side panel via background
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    chrome.runtime.sendMessage({
+      type: 'tracelens-entry',
+      entry: { url: entry.url, method: entry.method, status: entry.status, dur: entry.dur, timestamp: entry.timestamp }
+    }).catch(() => {});
+  }
 
   if (capturing) {
     updateSummary();
     updateHeatmap();
     if (CASCADE_ENABLED && detectCascade(allEntries.slice(-10), THRESH)) {
       showCascadeAlert();
+    }
+    if (BASELINE_ENABLED) {
+      checkPerformanceRegression(entry);
     }
     renderTimeline();
   }
@@ -437,6 +480,92 @@ function onRequestFinished(request) {
   });
 }
 
+// --------------- Performance Regression ---------------
+function savePerformanceBaseline() {
+  const baseline = {};
+  allEntries.forEach(e => {
+    if (!baseline[e.path]) baseline[e.path] = { total: 0, count: 0 };
+    baseline[e.path].total += e.dur;
+    baseline[e.path].count++;
+  });
+  Object.keys(baseline).forEach(k => {
+    baseline[k].avg = baseline[k].total / baseline[k].count;
+  });
+  performanceBaseline = baseline;
+  saveSetting('performanceBaseline', baseline);
+}
+
+function checkPerformanceRegression(entry) {
+  const base = performanceBaseline[entry.path];
+  if (!base) return;
+  const threshold = base.avg * (1 + BASELINE_PCT / 100);
+  if (entry.dur > threshold) {
+    showPerfAlert(entry.path, base.avg, entry.dur);
+  }
+}
+
+function showPerfAlert(path, baseline, actual) {
+  const $alert = document.getElementById('perf-alert');
+  const $text = document.getElementById('perf-alert-text');
+  if (!$alert || !$text) return;
+  const pct = Math.round(((actual - baseline) / baseline) * 100);
+  $text.textContent = `Regression: ${path} took ${formatDur(actual)} vs baseline ${formatDur(baseline)} (+${pct}%)`;
+  $alert.classList.add('visible');
+  setTimeout(() => $alert.classList.remove('visible'), 10000);
+}
+
+// --------------- Import .tracelens Snapshots ---------------
+function importTraceLensSnapshot(file) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const snapshot = JSON.parse(ev.target.result);
+      if (snapshot.entry) {
+        const entry = snapshot.entry;
+        entry.id = entry.id || generateId();
+        entry._auth = extractAuth(entry);
+        entry._isRetry = false;
+        entry._displayName = getDisplayName(entry);
+        entry._methodLabel = getMethodLabel(entry);
+        entry._isGraphQL = isGraphQL(entry);
+        entry._imported = true;
+        allEntries.push(entry);
+        addToBurst(entry);
+        updateSummary();
+        renderTimeline();
+      }
+    } catch (e) {
+      console.error('Failed to import .tracelens snapshot:', e);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// --------------- Annotations ---------------
+function saveAnnotation(entryId, text) {
+  if (text.trim()) {
+    annotations[entryId] = text;
+  } else {
+    delete annotations[entryId];
+  }
+  saveSetting('annotations', annotations);
+  renderTimeline();
+}
+
+// --------------- WebSocket Capture ---------------
+function startWebSocketCapture() {
+  if (typeof chrome === 'undefined' || !chrome.devtools?.network) return;
+  // Chrome DevTools doesn't provide direct WebSocket frame API in network.onRequestFinished,
+  // but we can capture WebSocket upgrade requests and mark them
+}
+
+function captureWebSocketUpgrade(entry) {
+  if (entry.status === 101 || entry.url?.startsWith('ws://') || entry.url?.startsWith('wss://')) {
+    entry._isWebSocket = true;
+    entry._wsFrames = [];
+  }
+}
+
 // ============================================================
 //  UI RENDERING
 // ============================================================
@@ -444,7 +573,7 @@ function onRequestFinished(request) {
 // Cache DOM elements
 let $timeline, $summary, $heatmap, $drawer, $drawerContent,
     $searchInput, $cascadeAlert, $settingsPanel, $shortcutsOverlay,
-    $captureBtn, $clearBtn, $liveDot, $gauge;
+    $captureBtn, $clearBtn, $liveDot, $gauge, $perfAlert;
 
 function cacheDom() {
   $timeline = document.getElementById('timeline');
@@ -454,6 +583,7 @@ function cacheDom() {
   $drawerContent = document.getElementById('drawer-content');
   $searchInput = document.getElementById('search-input');
   $cascadeAlert = document.getElementById('cascade-alert');
+  $perfAlert = document.getElementById('perf-alert');
   $settingsPanel = document.getElementById('settings-panel');
   $shortcutsOverlay = document.getElementById('shortcuts-overlay');
   $captureBtn = document.getElementById('capture-btn');
@@ -573,69 +703,117 @@ function showCascadeAlert() {
 }
 
 // --------------- Timeline Rendering ---------------
+function renderRequestRow(e, maxDur) {
+  const statusClass = e.status >= 500 ? 'status-5xx' : e.status >= 400 ? 'status-4xx' : e.status >= 300 ? 'status-3xx' : 'status-2xx';
+  const durClass = e.dur >= THRESH ? 'dur-slow' : e.dur >= THRESH * 0.6 ? 'dur-warn' : 'dur-ok';
+  const edgeClass = e.status >= 400 ? 'edge-red' : e.dur >= THRESH ? 'edge-yellow' : 'edge-green';
+  const barW = Math.min(100, (e.dur / maxDur) * 100);
+  const selClass = selectedEntry?.id === e.id ? 'selected' : '';
+  const hasNote = annotations[e.id];
+
+  const authBadge = e._auth && TOKEN_COUNTDOWN
+    ? `<span class="token-badge ${e._auth.ok ? 'token-ok' : 'token-expired'}">${e._auth.ok ? Math.round(e._auth.minsLeft || 0) + 'm' : 'EXP'}</span>`
+    : '';
+
+  const wsBadge = e._isWebSocket ? '<span class="ws-badge">WS</span>' : '';
+  const noteDot = hasNote ? '<span class="note-indicator" title="Has note"></span>' : '';
+  const importBadge = e._imported ? '<span class="ws-badge" style="background:rgba(232,160,32,0.15);color:var(--amber)">IMP</span>' : '';
+
+  const pageHost = (() => { try { return new URL(e.pageUrl || e.url).hostname; } catch(x) { return ''; } })();
+
+  return `<div class="req-row ${selClass}" data-id="${e.id}">
+    <div class="req-edge ${edgeClass}"></div>
+    <div class="req-method method-${e._methodLabel.toLowerCase().replace(/[^a-z]/g, '')}">${escapeHtml(e._methodLabel)}</div>
+    <div class="req-path">${noteDot}${escapeHtml(e._displayName)}${authBadge}${wsBadge}${importBadge}</div>
+    <div class="req-meta">
+      <span class="req-status ${statusClass}" title="${STATUS_CODES[e.status] || ''}">${e.status}</span>
+      <span class="req-page">${escapeHtml(pageHost)}</span>
+    </div>
+    <div class="req-dur ${durClass}">
+      ${formatDur(e.dur)}
+      <div class="dur-bar"><div class="dur-fill ${durClass}" style="width:${barW}%"></div></div>
+    </div>
+  </div>`;
+}
+
 function renderTimeline() {
   if (!$timeline) return;
   const entries = getFilteredEntries();
   const maxDur = Math.max(THRESH, ...entries.map(e => e.dur || 0));
 
-  // Group by burst
-  const burstMap = new Map();
-  entries.forEach(e => {
-    const burst = bursts.find(b => b.requests.some(r => r.id === e.id));
-    const bId = burst ? burst.id : 'ungrouped';
-    if (!burstMap.has(bId)) burstMap.set(bId, { burst, entries: [] });
-    burstMap.get(bId).entries.push(e);
-  });
-
   let html = '';
-  burstMap.forEach(({ burst, entries: bEntries }) => {
-    if (burst) {
-      const slowCount = bEntries.filter(e => e.dur >= THRESH).length;
-      const errCount = bEntries.filter(e => e.status >= 400).length;
-      const time = new Date(burst.startTime).toLocaleTimeString();
-      html += `<div class="burst-header">
-        <span class="burst-time">${time}</span>
-        <span class="burst-label">${bEntries.length} requests</span>
-        ${slowCount ? `<span class="burst-chip chip-slow">${slowCount} slow</span>` : ''}
-        ${errCount ? `<span class="burst-chip chip-errors">${errCount} err</span>` : ''}
-      </div>`;
-    }
 
-    bEntries.forEach(e => {
-      // Check for bookmark right before this entry
-      bookmarks.forEach((label, ts) => {
-        if (Math.abs(e.timestamp - ts) < 100) {
-          html += `<div class="bookmark-row"><span class="bookmark-label">${escapeHtml(label)}</span></div>`;
-        }
-      });
-
-      const statusClass = e.status >= 500 ? 'status-5xx' : e.status >= 400 ? 'status-4xx' : e.status >= 300 ? 'status-3xx' : 'status-2xx';
-      const durClass = e.dur >= THRESH ? 'dur-slow' : e.dur >= THRESH * 0.6 ? 'dur-warn' : 'dur-ok';
-      const edgeClass = e.status >= 400 ? 'edge-red' : e.dur >= THRESH ? 'edge-yellow' : 'edge-green';
-      const barW = Math.min(100, (e.dur / maxDur) * 100);
-      const selClass = selectedEntry?.id === e.id ? 'selected' : '';
-
-      const authBadge = e._auth && TOKEN_COUNTDOWN
-        ? `<span class="token-badge ${e._auth.ok ? 'token-ok' : 'token-expired'}">${e._auth.ok ? Math.round(e._auth.minsLeft || 0) + 'm' : 'EXP'}</span>`
-        : '';
-
-      const pageHost = (() => { try { return new URL(e.pageUrl || e.url).hostname; } catch(x) { return ''; } })();
-
-      html += `<div class="req-row ${selClass}" data-id="${e.id}">
-        <div class="req-edge ${edgeClass}"></div>
-        <div class="req-method method-${e._methodLabel.toLowerCase().replace(/[^a-z]/g, '')}">${escapeHtml(e._methodLabel)}</div>
-        <div class="req-path">${escapeHtml(e._displayName)}${authBadge}</div>
-        <div class="req-meta">
-          <span class="req-status ${statusClass}" title="${STATUS_CODES[e.status] || ''}">${e.status}</span>
-          <span class="req-page">${escapeHtml(pageHost)}</span>
-        </div>
-        <div class="req-dur ${durClass}">
-          ${formatDur(e.dur)}
-          <div class="dur-bar"><div class="dur-fill ${durClass}" style="width:${barW}%"></div></div>
-        </div>
-      </div>`;
+  if (DOMAIN_GROUPING) {
+    // Group by domain
+    const domainMap = new Map();
+    entries.forEach(e => {
+      let domain;
+      try { domain = new URL(e.url).hostname; } catch(x) { domain = 'unknown'; }
+      if (!domainMap.has(domain)) domainMap.set(domain, []);
+      domainMap.get(domain).push(e);
     });
-  });
+
+    domainMap.forEach((domainEntries, domain) => {
+      const isCollapsed = collapsedDomains.has(domain);
+      const slowCount = domainEntries.filter(e => e.dur >= THRESH).length;
+      const errCount = domainEntries.filter(e => e.status >= 400).length;
+      const avgDur = domainEntries.reduce((s, e) => s + (e.dur || 0), 0) / domainEntries.length;
+
+      html += `<div class="domain-group-header" data-domain="${escapeHtml(domain)}">
+        <span class="domain-group-toggle ${isCollapsed ? 'collapsed' : ''}">▼</span>
+        <span class="domain-group-name">${escapeHtml(domain)}</span>
+        <span class="domain-group-count">${domainEntries.length}</span>
+        <div class="domain-group-stats">
+          ${slowCount ? `<span class="domain-stat domain-stat-slow">${slowCount} slow</span>` : ''}
+          ${errCount ? `<span class="domain-stat domain-stat-err">${errCount} err</span>` : ''}
+          <span class="domain-stat domain-stat-avg">avg ${formatDur(avgDur)}</span>
+        </div>
+      </div>`;
+
+      if (!isCollapsed) {
+        domainEntries.forEach(e => {
+          bookmarks.forEach((label, ts) => {
+            if (Math.abs(e.timestamp - ts) < 100) {
+              html += `<div class="bookmark-row"><span class="bookmark-label">${escapeHtml(label)}</span></div>`;
+            }
+          });
+          html += renderRequestRow(e, maxDur);
+        });
+      }
+    });
+  } else {
+    // Group by burst (original behavior)
+    const burstMap = new Map();
+    entries.forEach(e => {
+      const burst = bursts.find(b => b.requests.some(r => r.id === e.id));
+      const bId = burst ? burst.id : 'ungrouped';
+      if (!burstMap.has(bId)) burstMap.set(bId, { burst, entries: [] });
+      burstMap.get(bId).entries.push(e);
+    });
+
+    burstMap.forEach(({ burst, entries: bEntries }) => {
+      if (burst) {
+        const slowCount = bEntries.filter(e => e.dur >= THRESH).length;
+        const errCount = bEntries.filter(e => e.status >= 400).length;
+        const time = new Date(burst.startTime).toLocaleTimeString();
+        html += `<div class="burst-header">
+          <span class="burst-time">${time}</span>
+          <span class="burst-label">${bEntries.length} requests</span>
+          ${slowCount ? `<span class="burst-chip chip-slow">${slowCount} slow</span>` : ''}
+          ${errCount ? `<span class="burst-chip chip-errors">${errCount} err</span>` : ''}
+        </div>`;
+      }
+
+      bEntries.forEach(e => {
+        bookmarks.forEach((label, ts) => {
+          if (Math.abs(e.timestamp - ts) < 100) {
+            html += `<div class="bookmark-row"><span class="bookmark-label">${escapeHtml(label)}</span></div>`;
+          }
+        });
+        html += renderRequestRow(e, maxDur);
+      });
+    });
+  }
 
   if (entries.length === 0) {
     html = `<div class="empty-state">
@@ -653,6 +831,16 @@ function renderTimeline() {
       const id = row.dataset.id;
       const entry = allEntries.find(e => e.id === id);
       if (entry) openDrawer(entry);
+    });
+  });
+
+  // Domain group collapse toggle
+  $timeline.querySelectorAll('.domain-group-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const domain = header.dataset.domain;
+      if (collapsedDomains.has(domain)) collapsedDomains.delete(domain);
+      else collapsedDomains.add(domain);
+      renderTimeline();
     });
   });
 }
@@ -679,7 +867,8 @@ function closeDrawer() {
 function renderDrawer() {
   if (!selectedEntry || !$drawerContent) return;
   const e = selectedEntry;
-  const tabs = ['overview', 'timing', 'token', 'replay', 'diff', 'report'];
+  const baseTabs = ['overview', 'timing', 'token', 'replay', 'diff', 'report'];
+  const tabs = e._isWebSocket ? ['overview', 'frames', 'replay', 'report'] : baseTabs;
 
   let html = `<div class="drawer-tabs">
     ${tabs.map(t => `<button class="drawer-tab ${activeTab === t ? 'active' : ''}" data-tab="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</button>`).join('')}
@@ -693,6 +882,7 @@ function renderDrawer() {
   else if (activeTab === 'replay') html += renderReplayTab(e);
   else if (activeTab === 'diff') html += renderDiffTab(e);
   else if (activeTab === 'report') html += renderReportTab(e);
+  else if (activeTab === 'frames') html += renderFramesTab(e);
 
   html += '</div>';
   $drawerContent.innerHTML = html;
@@ -730,6 +920,16 @@ function renderDrawer() {
       if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy Incident Report'; }, 1500); }
     });
   });
+
+  // Note textarea handler
+  const noteInput = $drawerContent.querySelector('#note-input');
+  if (noteInput) {
+    let noteTimer;
+    noteInput.addEventListener('input', () => {
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => saveAnnotation(e.id, noteInput.value), 500);
+    });
+  }
 
   // Start token countdown if on token tab
   if (activeTab === 'token' && e._auth?.expRaw) {
@@ -794,6 +994,10 @@ function renderOverviewTab(e) {
     <div class="ov-section diagnosis-block">
       <div class="diag-label">◈ AI Diagnosis</div>
       <div class="diag-text">${escapeHtml(diag)}</div>
+    </div>
+    <div class="ov-section note-section">
+      <div class="ov-heading">Notes</div>
+      <textarea class="note-textarea" id="note-input" placeholder="Add a note about this request…">${escapeHtml(annotations[e.id] || '')}</textarea>
     </div>
   `;
 }
@@ -1003,6 +1207,36 @@ function renderReportTab(e) {
   `;
 }
 
+// --------------- WebSocket Frames Tab ---------------
+function renderFramesTab(e) {
+  const frames = e._wsFrames || [];
+  if (frames.length === 0) {
+    return `<div class="empty-state">
+      <div class="empty-title">WebSocket Connection</div>
+      <div class="empty-sub">Status ${e.status === 101 ? '101 Switching Protocols — upgrade successful' : e.status}. Frame capture requires active monitoring during the connection lifecycle.</div>
+    </div>
+    <div class="ov-section">
+      <div class="ov-heading">Connection Info</div>
+      <div class="ov-grid">
+        <div class="ov-cell"><span class="ov-label">URL</span><span class="ov-val">${escapeHtml(e.url)}</span></div>
+        <div class="ov-cell"><span class="ov-label">Protocol</span><span class="ov-val">${escapeHtml(e.resHeaders?.find(h => h.name.toLowerCase() === 'sec-websocket-protocol')?.value || '—')}</span></div>
+        <div class="ov-cell"><span class="ov-label">Extensions</span><span class="ov-val">${escapeHtml(e.resHeaders?.find(h => h.name.toLowerCase() === 'sec-websocket-extensions')?.value || '—')}</span></div>
+      </div>
+    </div>`;
+  }
+
+  return `
+    <div class="ov-section">
+      <div class="ov-heading">Frames (${frames.length})</div>
+      ${frames.map(f => `<div class="ws-frame-row">
+        <span class="ws-dir ${f.dir === 'send' ? 'ws-dir-send' : 'ws-dir-recv'}">${f.dir === 'send' ? 'OUT' : 'IN'}</span>
+        <span class="ws-data" title="${escapeHtml(f.data)}">${escapeHtml(f.data.substring(0, 200))}</span>
+        <span class="ws-time">${new Date(f.time).toLocaleTimeString()}</span>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
 // --------------- JSON Syntax Highlighting ---------------
 function syntaxHighlight(json) {
   return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1036,6 +1270,13 @@ function applySettingsToUI() {
   if (gqlToggle) gqlToggle.checked = GQL_NAMES;
   if (cascadeToggle) cascadeToggle.checked = CASCADE_ENABLED;
   if (tokenToggle) tokenToggle.checked = TOKEN_COUNTDOWN;
+
+  const baselineToggle = document.getElementById('setting-baseline');
+  const baselinePct = document.getElementById('setting-baseline-pct');
+  const baselineRow = document.getElementById('baseline-thresh-row');
+  if (baselineToggle) baselineToggle.checked = BASELINE_ENABLED;
+  if (baselinePct) baselinePct.value = BASELINE_PCT;
+  if (baselineRow) baselineRow.style.display = BASELINE_ENABLED ? 'flex' : 'none';
 }
 
 function initSettingsListeners() {
@@ -1062,6 +1303,21 @@ function initSettingsListeners() {
     TOKEN_COUNTDOWN = ev.target.checked;
     saveSetting('tokenCountdown', TOKEN_COUNTDOWN);
     renderTimeline();
+  });
+  document.getElementById('setting-baseline')?.addEventListener('change', (ev) => {
+    BASELINE_ENABLED = ev.target.checked;
+    saveSetting('baselineEnabled', BASELINE_ENABLED);
+    const row = document.getElementById('baseline-thresh-row');
+    if (row) row.style.display = BASELINE_ENABLED ? 'flex' : 'none';
+  });
+  document.getElementById('setting-baseline-pct')?.addEventListener('change', (ev) => {
+    BASELINE_PCT = parseInt(ev.target.value) || 50;
+    saveSetting('baselinePct', BASELINE_PCT);
+  });
+  document.getElementById('save-baseline-btn')?.addEventListener('click', () => {
+    savePerformanceBaseline();
+    const btn = document.getElementById('save-baseline-btn');
+    if (btn) { btn.textContent = 'Saved!'; setTimeout(() => { btn.textContent = 'Snapshot'; }, 1500); }
   });
 }
 
@@ -1110,6 +1366,16 @@ function initKeyboard() {
         ev.preventDefault();
         if (selectedEntry) navigator.clipboard.writeText(generateReport(selectedEntry));
         break;
+      case 'd':
+        ev.preventDefault();
+        DOMAIN_GROUPING = !DOMAIN_GROUPING;
+        document.getElementById('domain-group-btn')?.classList.toggle('active', DOMAIN_GROUPING);
+        renderTimeline();
+        break;
+      case 't':
+        ev.preventDefault();
+        toggleTheme();
+        break;
       case '?':
         ev.preventDefault();
         toggleShortcuts();
@@ -1149,6 +1415,7 @@ function toggleCapture() {
 function clearAll() {
   allEntries = [];
   bursts = [];
+  wsEntries = [];
   bookmarks.clear();
   selectedEntry = null;
   selectedIdx = -1;
@@ -1157,6 +1424,11 @@ function clearAll() {
   updateSummary();
   updateHeatmap();
   renderTimeline();
+
+  // Notify side panel
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    chrome.runtime.sendMessage({ type: 'tracelens-clear' }).catch(() => {});
+  }
 }
 
 // --------------- Filter Bar ---------------
@@ -1198,6 +1470,33 @@ function init() {
   document.getElementById('settings-btn')?.addEventListener('click', toggleSettings);
   document.getElementById('shortcuts-btn')?.addEventListener('click', toggleShortcuts);
   document.getElementById('settings-close')?.addEventListener('click', toggleSettings);
+
+  // Theme toggle
+  document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+
+  // Domain grouping toggle
+  document.getElementById('domain-group-btn')?.addEventListener('click', () => {
+    DOMAIN_GROUPING = !DOMAIN_GROUPING;
+    document.getElementById('domain-group-btn')?.classList.toggle('active', DOMAIN_GROUPING);
+    renderTimeline();
+  });
+
+  // Import .tracelens
+  document.getElementById('import-btn')?.addEventListener('click', () => {
+    document.getElementById('import-file')?.click();
+  });
+  document.getElementById('import-file')?.addEventListener('change', (ev) => {
+    const file = ev.target.files?.[0];
+    if (file) {
+      importTraceLensSnapshot(file);
+      ev.target.value = '';
+    }
+  });
+
+  // Performance alert dismiss
+  document.getElementById('perf-alert-dismiss')?.addEventListener('click', () => {
+    document.getElementById('perf-alert')?.classList.remove('visible');
+  });
 
   // Periodically update heatmap
   setInterval(updateHeatmap, 2000);
