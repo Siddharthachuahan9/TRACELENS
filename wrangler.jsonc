@@ -10,5 +10,12 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "routes": [
+    {
+      "pattern": "tracelens.site",
+      "zone_name": "tracelens.site",
+      "custom_domain": true,
+    }
   ]
 }

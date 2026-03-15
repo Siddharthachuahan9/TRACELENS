@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://tracelens.site">tracelens.site</a> ·
   <a href="#installation">Install</a> ·
   <a href="#features">Features</a> ·
   <a href="#how-it-works">How It Works</a> ·
@@ -154,6 +155,10 @@ TraceLens is a Chrome DevTools extension that gives developers and support engin
 
 > Coming soon. Star the repo to get notified.
 
+### Landing Page
+
+Visit **[tracelens.site](https://tracelens.site)** for the project landing page, hosted on Cloudflare Workers.
+
 ---
 
 ## Usage
@@ -277,6 +282,17 @@ TraceLens is designed to be **strictly read-only**:
 The only Chrome API used beyond `storage` is `chrome.devtools.network.onRequestFinished` (read-only network observation) and `chrome.devtools.inspectedWindow.eval('window.location.href')` (hardcoded read-only string to get the current page URL).
 
 **All captured data stays in browser memory and is never written to disk or sent anywhere.**
+
+### Security Hardening
+
+The following security improvements have been applied:
+
+| Area | Improvement |
+|------|-------------|
+| **JWT tokens** | Raw tokens are masked by default (`abc••••••xyz`) with an explicit Reveal/Hide toggle — prevents accidental token exposure in screenshots |
+| **Content Security Policy** | `manifest.json` enforces `script-src 'self'` — blocks any inline script execution in extension pages |
+| **Inline event handlers** | All `onclick` attributes removed from HTML — replaced with `addEventListener` in JS, CSP-compliant |
+| **Import validation** | Imported `.tracelens` snapshot files are type-checked before any data is merged into app state |
 
 ---
 

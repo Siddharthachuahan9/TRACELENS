@@ -520,6 +520,11 @@ function importTraceLensSnapshot(file) {
   reader.onload = (ev) => {
     try {
       const snapshot = JSON.parse(ev.target.result);
+      if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return;
+      if (!snapshot.entry || typeof snapshot.entry !== 'object' || Array.isArray(snapshot.entry)) return;
+      const allowedTypes = ['string', 'number', 'boolean'];
+      if (snapshot.entry.url !== undefined && typeof snapshot.entry.url !== 'string') return;
+      if (snapshot.entry.method !== undefined && typeof snapshot.entry.method !== 'string') return;
       if (snapshot.entry) {
         const entry = snapshot.entry;
         entry.id = entry.id || generateId();
@@ -897,13 +902,30 @@ function renderDrawer() {
 
   $drawerContent.querySelector('#drawer-close-btn')?.addEventListener('click', closeDrawer);
 
+  // Reveal token toggle
+  $drawerContent.querySelector('#reveal-token-btn')?.addEventListener('click', (ev) => {
+    const tokenEl = document.getElementById('raw-token');
+    if (!tokenEl) return;
+    const revealed = tokenEl.dataset.revealed === 'true';
+    if (revealed) {
+      tokenEl.textContent = tokenEl.dataset.full.substring(0, 12) + '••••••••••••••••••••••••••••••••' + tokenEl.dataset.full.slice(-8);
+      tokenEl.dataset.revealed = 'false';
+      ev.target.textContent = 'Reveal';
+    } else {
+      tokenEl.textContent = tokenEl.dataset.full;
+      tokenEl.dataset.revealed = 'true';
+      ev.target.textContent = 'Hide';
+    }
+  });
+
   // Copy button handlers
   $drawerContent.querySelectorAll('[data-copy]').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.copy;
       const el = document.getElementById(target);
       if (el) {
-        navigator.clipboard.writeText(el.textContent).then(() => {
+        const text = el.dataset.full || el.textContent;
+        navigator.clipboard.writeText(text).then(() => {
           btn.textContent = 'Copied!';
           setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
         });
@@ -1054,7 +1076,8 @@ function renderTokenTab(e) {
     <div class="ov-section">
       <div class="ov-heading">Raw Token</div>
       <div class="token-raw-wrap">
-        <code class="token-raw" id="raw-token">${escapeHtml(auth.raw || '')}</code>
+        <code class="token-raw" id="raw-token" data-full="${escapeHtml(auth.raw || '')}" data-revealed="false">${escapeHtml(auth.raw ? auth.raw.substring(0, 12) + '••••••••••••••••••••••••••••••••' + auth.raw.slice(-8) : '')}</code>
+        <button class="copy-btn" id="reveal-token-btn">Reveal</button>
         <button class="copy-btn" data-copy="raw-token">Copy</button>
       </div>
     </div>
@@ -1469,6 +1492,9 @@ function init() {
   $clearBtn?.addEventListener('click', clearAll);
   document.getElementById('settings-btn')?.addEventListener('click', toggleSettings);
   document.getElementById('shortcuts-btn')?.addEventListener('click', toggleShortcuts);
+  document.getElementById('shortcuts-close-btn')?.addEventListener('click', () => {
+    $shortcutsOverlay?.classList.remove('visible');
+  });
   document.getElementById('settings-close')?.addEventListener('click', toggleSettings);
 
   // Theme toggle
