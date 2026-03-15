@@ -10,6 +10,14 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
   },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Open TraceLens"
+  },
   "permissions": ["storage", "sidePanel"],
   "side_panel": {
     "default_path": "sidepanel.html"

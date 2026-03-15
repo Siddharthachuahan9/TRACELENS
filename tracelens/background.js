@@ -10,9 +10,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-// Enable side panel on install
+// Open the side panel when the toolbar icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ tabId: tab.id });
+});
+
+// Enable side panel on install and set it to open on action click
 chrome.runtime.onInstalled?.addListener(() => {
-  if (chrome.sidePanel?.setOptions) {
-    chrome.sidePanel.setOptions({ enabled: true });
-  }
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 });
