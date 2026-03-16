@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your JWT Is Expired and That's Why Everything Is on Fire</title>
+  <meta name="description" content="401 errors, mysterious logouts, 'it works on my machine' — it's almost always the JWT. Here's how to decode, debug, and stop guessing with Chrome DevTools.">
+  <meta name="keywords" content="jwt expired debugging, decode jwt chrome devtools, jwt token inspector, bearer token expired, 401 unauthorized debugging, jwt decoder browser, how to read jwt token, jwt expiry chrome extension">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tracelens.site/blog/jwt-expired-debugging-chrome-devtools/">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="/favicon-128.png">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://tracelens.site/blog/jwt-expired-debugging-chrome-devtools/">
+  <meta property="og:title" content="Your JWT Is Expired and That's Why Everything Is on Fire">
+  <meta property="og:description" content="401 errors, mysterious logouts, it works on my machine — it's almost always the JWT. Here's how to decode and debug it in Chrome DevTools.">
+  <meta property="og:image" content="https://tracelens.site/favicon-128.png">
+  <meta property="og:site_name" content="TraceLens">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Your JWT Is Expired and That's Why Everything Is on Fire">
+  <meta name="twitter:description" content="401 errors, mysterious logouts — it's almost always the JWT. Here's how to debug it in Chrome DevTools.">
+  <meta name="twitter:image" content="https://tracelens.site/favicon-128.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Your JWT Is Expired and That's Why Everything Is on Fire",
+    "description": "401 errors, mysterious logouts, 'it works on my machine' — it's almost always the JWT. Here's how to decode, debug, and stop guessing with Chrome DevTools.",
+    "url": "https://tracelens.site/blog/jwt-expired-debugging-chrome-devtools/",
+    "datePublished": "2026-03-15",
+    "dateModified": "2026-03-15",
+    "author": { "@type": "Person", "name": "Siddharthachuahan9" },
+    "publisher": { "@type": "Organization", "name": "TraceLens", "url": "https://tracelens.site" }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I decode a JWT token in Chrome DevTools?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Open Chrome DevTools, go to the Network tab, click any request that has an Authorization header, and look at the Request Headers. Copy the token after 'Bearer ' and paste it into jwt.io — or use TraceLens which decodes it automatically inside DevTools without leaving the browser."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why does my JWT keep expiring?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "JWTs have an 'exp' field set by your auth server. Short expiry (15–60 minutes) is intentional for security. If users are getting logged out unexpectedly, check if your app is refreshing tokens correctly, or if the system clock on the server is out of sync."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What does a 401 Unauthorized error mean?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A 401 means the server didn't accept the authentication credentials. Most commonly: the JWT token is expired, the token is malformed, the Authorization header is missing entirely, or the token was issued for a different environment (e.g. staging token used in production)."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 40px 24px 100px; }
+    .article-back { display: inline-flex; align-items: center; gap: 6px; color: var(--c8); font-size: .88rem; margin-bottom: 40px; transition: color .2s; }
+    .article-back:hover { color: var(--amber); }
+    .article-tag { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--amber); background: var(--amber-dim); border-radius: 4px; padding: 3px 8px; margin-bottom: 20px; }
+    .article-title { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; color: var(--cW); line-height: 1.25; margin-bottom: 16px; }
+    .article-meta { display: flex; align-items: center; gap: 16px; font-size: .85rem; color: var(--c7); margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--c3); }
+    .article-body h2 { font-size: 1.5rem; font-weight: 700; color: var(--cW); margin: 52px 0 16px; line-height: 1.3; }
+    .article-body h3 { font-size: 1.15rem; font-weight: 600; color: var(--cW); margin: 36px 0 12px; }
+    .article-body p { color: var(--c9); line-height: 1.8; margin-bottom: 18px; font-size: 1rem; }
+    .article-body ul, .article-body ol { padding-left: 24px; margin-bottom: 18px; }
+    .article-body li { color: var(--c9); line-height: 1.8; margin-bottom: 8px; font-size: 1rem; }
+    .article-body strong { color: var(--cW); font-weight: 600; }
+    .article-body code { font-family: var(--mono); font-size: .88em; background: var(--c3); color: var(--amber); padding: 2px 6px; border-radius: 4px; }
+    .article-body a { color: var(--amber); text-decoration: underline; text-underline-offset: 3px; }
+    .article-body blockquote { border-left: 3px solid var(--amber); margin: 28px 0; padding: 12px 20px; background: var(--c2); border-radius: 0 8px 8px 0; }
+    .article-body blockquote p { margin: 0; color: var(--c9); font-style: italic; }
+    .callout { background: var(--c2); border: 1px solid var(--c3); border-radius: 10px; padding: 20px 24px; margin: 28px 0; }
+    .callout-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--amber); margin-bottom: 8px; }
+    .callout p { margin: 0; font-size: .93rem; color: var(--c9); line-height: 1.7; }
+    .code-block { background: var(--c2); border: 1px solid var(--c3); border-radius: 8px; padding: 18px 20px; margin: 20px 0; font-family: var(--mono); font-size: .83rem; color: var(--c9); overflow-x: auto; line-height: 1.7; }
+    .code-block .key { color: var(--blue); }
+    .code-block .val { color: var(--green); }
+    .code-block .str { color: var(--amber); }
+    .code-block .comment { color: var(--c7); }
+    .highlight-box { background: rgba(232,160,32,.07); border: 1px solid var(--amber-glow); border-radius: 10px; padding: 20px 24px; margin: 32px 0; }
+    .highlight-box p { color: var(--cW); margin: 0; font-size: .95rem; line-height: 1.7; }
+    .emoji-heading { font-size: 1.4rem; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <span class="nav-logo">T</span>
+        <span class="nav-name">TraceLens</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#how-it-works">How It Works</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://github.com/Siddharthachuahan9/TRACELENS" class="nav-gh" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="article-wrap">
+    <a href="/blog/" class="article-back">← Back to Blog</a>
+
+    <span class="article-tag">Debugging</span>
+    <h1 class="article-title">Your JWT Is Expired and That's Why Everything Is on Fire</h1>
+
+    <div class="article-meta">
+      <span>March 15, 2026</span>
+      <span>·</span>
+      <span>6 min read</span>
+      <span>·</span>
+      <span>JWT, Auth, Chrome DevTools</span>
+    </div>
+
+    <div class="article-body">
+
+      <p>It's 4pm on a Friday. A customer just filed a ticket: <em>"The dashboard is broken. Nothing loads."</em> You check the backend logs. Healthy. You check the database. Fine. You ask the customer to send a screenshot. It's a white screen. You paste the URL yourself and everything works perfectly.</p>
+
+      <p>You type the four most dangerous words in software engineering: <strong>"It works for me."</strong></p>
+
+      <p>Then — because you're a professional — you open DevTools instead of closing the ticket. And right there, staring back at you from the Network tab, is a column of <strong>401 Unauthorized</strong> responses. Every single API call. Rejected.</p>
+
+      <p>It's the JWT. It's almost always the JWT.</p>
+
+      <h2>What even is a JWT?</h2>
+
+      <p>A JSON Web Token (JWT) is how most modern apps prove who you are to an API. When you log in, the server hands you a token — a long, base64-encoded string that looks like someone fell asleep on their keyboard:</p>
+
+      <div class="code-block">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMyIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc0MjA0ODAwMH0.xK9mN2pQ...</div>
+
+      <p>It has three parts separated by dots: a header, a payload, and a signature. The payload is the interesting bit — it contains your user ID, email, role, and crucially: an <code>exp</code> field that says when the token dies.</p>
+
+      <p>When the token expires, every request that uses it gets a 401. The server isn't being rude. It's just following the rules you set up.</p>
+
+      <h2>The classic JWT debugging experience</h2>
+
+      <p>Here's what debugging a JWT problem normally looks like:</p>
+
+      <ol>
+        <li>Open DevTools Network tab</li>
+        <li>Find a failing request</li>
+        <li>Click it, scroll to Request Headers</li>
+        <li>Find the <code>Authorization</code> header — it's a 400-character wall of text</li>
+        <li>Copy everything after "Bearer "</li>
+        <li>Open a new tab, go to jwt.io</li>
+        <li>Paste the token</li>
+        <li>Read the decoded payload</li>
+        <li>See that <code>exp</code> was 47 minutes ago</li>
+        <li>Close jwt.io, go back to DevTools</li>
+        <li>Realise you've already lost focus on which request you were looking at</li>
+        <li>Start over</li>
+      </ol>
+
+      <p>This is the workflow. Millions of developers do this exact thing every single day. It's perfectly functional the way eating soup with a fork is perfectly functional.</p>
+
+      <h2>What the token is actually telling you</h2>
+
+      <p>Once you decode the JWT payload, you get something like this:</p>
+
+      <div class="code-block">{
+  <span class="key">"sub"</span>: <span class="str">"user_123"</span>,
+  <span class="key">"email"</span>: <span class="str">"user@example.com"</span>,
+  <span class="key">"role"</span>: <span class="str">"admin"</span>,
+  <span class="key">"iat"</span>: <span class="val">1742044400</span>,  <span class="comment">// issued at — Unix timestamp</span>
+  <span class="key">"exp"</span>: <span class="val">1742048000</span>   <span class="comment">// expires at — also Unix timestamp</span>
+}</div>
+
+      <p>The <code>iat</code> and <code>exp</code> fields are Unix timestamps. To know if the token is expired, you compare <code>exp</code> to the current time. If <code>exp</code> is in the past — your token is toast.</p>
+
+      <p>The gap between <code>iat</code> and <code>exp</code> tells you the token lifetime. 3600 seconds = 1 hour. 900 seconds = 15 minutes. Some auth systems issue tokens that expire in 15 minutes because they're security-conscious. Some issue tokens that expire in 30 days because they're not.</p>
+
+      <h2>The five JWT problems that cause 80% of incidents</h2>
+
+      <h3>1. The token expired and nobody refreshed it</h3>
+      <p>The most common one. Your app gets a token on login, uses it for an hour, and then forgets to refresh it. The user doesn't log out — they just... stop working. Usually they notice when they try to do something important, like submitting a form after writing a long message.</p>
+
+      <div class="callout">
+        <div class="callout-title">How to spot it</div>
+        <p>Check the <code>exp</code> field. Is it in the past? Yes? That's your problem. The fix is in your auth layer — implement token refresh logic, or show the user a "session expired, please log in again" message before they lose their work.</p>
+      </div>
+
+      <h3>2. The token is from the wrong environment</h3>
+      <p>A developer copies a token from the staging environment and tests with it in production. Or vice versa. The signature won't match because the signing secret is different. The server rejects it with a 401 and gives no further explanation because it's not obligated to help you debug your copy-paste mistakes.</p>
+
+      <h3>3. The clock is wrong</h3>
+      <p>JWT expiry is time-based. If the server clock and the client clock disagree by more than a few minutes, perfectly valid tokens get rejected as expired — or worse, already-expired tokens get accepted. This is rare on modern cloud infrastructure but shows up on IoT devices, VMs with bad time sync, and laptops that have been in airplane mode for a long time.</p>
+
+      <h3>4. The role is wrong</h3>
+      <p>The token is valid and not expired, but the <code>role</code> field says <code>"viewer"</code> and the endpoint requires <code>"admin"</code>. The server returns a 403 (Forbidden) rather than a 401, but the symptom is similar — everything appears broken. The user swears they're an admin. They were an admin. Last week, someone changed their role in the database but they haven't logged out and back in to get a fresh token with the updated claims.</p>
+
+      <h3>5. The token isn't being sent at all</h3>
+      <p>The Authorization header is simply missing. This happens more than you'd think — a new API endpoint was added without auth middleware, a frontend refactor dropped the header from one specific fetch call, or the token is stored in a cookie and the request doesn't have <code>credentials: 'include'</code>. The server sees an anonymous request and returns 401.</p>
+
+      <h2>How to stop doing the jwt.io shuffle</h2>
+
+      <p><a href="https://tracelens.site">TraceLens</a> decodes every JWT it finds automatically — no tab switching, no copy-pasting. It reads the <code>Authorization: Bearer</code> header on every captured request, decodes the token inline, and shows you the subject, email, role, algorithm, issued time, expiry, and a live countdown bar showing how many minutes are left.</p>
+
+      <div class="highlight-box">
+        <p>If the token is expired, the badge turns red and says <strong>EXPIRED</strong>. If it expires in less than 5 minutes, the countdown bar goes yellow. You see this on every single request, without clicking anything extra.</p>
+      </div>
+
+      <p>And because TraceLens is read-only and runs entirely inside your browser, the token never leaves your machine. Which matters, because JWT tokens are credentials — pasting them into random websites is the kind of thing security teams write post-mortems about.</p>
+
+      <h2>The checklist when you get a 401</h2>
+
+      <ol>
+        <li><strong>Is the Authorization header present?</strong> — Check Request Headers. If it's missing, the token isn't being sent.</li>
+        <li><strong>Is the token expired?</strong> — Decode the <code>exp</code> field. Compare to now.</li>
+        <li><strong>Is this the right environment?</strong> — Check the <code>sub</code> or <code>email</code> to confirm the token belongs to the expected user in the expected environment.</li>
+        <li><strong>Does the role match what the endpoint requires?</strong> — Check the <code>role</code> or <code>roles</code> claim.</li>
+        <li><strong>Is the clock in sync?</strong> — If everything looks right but it still fails, check server time.</li>
+      </ol>
+
+      <p>Most 401s are solved at step 2. The token is expired. Refresh it, log in again, and move on with your life.</p>
+
+      <h2>FAQ</h2>
+
+      <h3>How do I decode a JWT token in Chrome DevTools?</h3>
+      <p>Open DevTools → Network tab → click any request with an <code>Authorization</code> header → look at Request Headers → copy the value after "Bearer " → paste into jwt.io. Or install <a href="https://tracelens.site">TraceLens</a> and it decodes every token automatically inside DevTools.</p>
+
+      <h3>Why does my JWT keep expiring too quickly?</h3>
+      <p>Your auth server sets the expiry — usually 15 to 60 minutes for access tokens. This is intentional for security. The solution is a refresh token flow: when the access token expires, use a long-lived refresh token to get a new one silently without logging the user out.</p>
+
+      <h3>What's the difference between 401 and 403?</h3>
+      <p><strong>401 Unauthorized</strong> means the request has no valid authentication — the token is missing, expired, or malformed. <strong>403 Forbidden</strong> means the token is valid and the user is authenticated, but they don't have permission to do what they're trying to do. Same symptom (things don't work), different cause.</p>
+
+      <hr style="border:none;border-top:1px solid var(--c3);margin:48px 0 32px;">
+
+      <p>Next time everything's on fire on a Friday afternoon, open DevTools, look at the 401s, and check the token first. Nine times out of ten, that's your answer. The tenth time it's a DNS problem. There's always a tenth time.</p>
+
+      <p><a href="https://tracelens.site">TraceLens</a> is a free Chrome DevTools extension that decodes JWTs automatically, shows live expiry countdowns, and helps you stop doing the jwt.io shuffle. <a href="https://github.com/Siddharthachuahan9/TRACELENS" target="_blank" rel="noopener">Open source on GitHub.</a></p>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="nav-logo">T</span>
+          <span class="nav-name">TraceLens</span>
+        </div>
+        <p class="footer-desc">See what your APIs are really doing.<br>Open source. Read-only. Browser-native.</p>
+        <div class="footer-links">
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS" target="_blank" rel="noopener">GitHub</a>
+          <a href="/blog/">Blog</a>
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS/issues" target="_blank" rel="noopener">Issues</a>
+        </div>
+        <p class="footer-copy">MIT License</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

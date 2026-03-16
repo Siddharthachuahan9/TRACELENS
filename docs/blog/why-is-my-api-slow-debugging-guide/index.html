@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Why Is My API Taking 3 Seconds? A Detective Story</title>
+  <meta name="description" content="Your API is slow. The backend team says it's fine. The frontend team says it's fine. But the user is watching a spinner. Let's find out who did it.">
+  <meta name="keywords" content="api slow debugging, slow api call chrome devtools, ttfb slow fix, server wait time high, timing waterfall chrome, slow network request debugging, api performance debugging, chrome devtools network slow request">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tracelens.site/blog/why-is-my-api-slow-debugging-guide/">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="/favicon-128.png">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://tracelens.site/blog/why-is-my-api-slow-debugging-guide/">
+  <meta property="og:title" content="Why Is My API Taking 3 Seconds? A Detective Story">
+  <meta property="og:description" content="Your API is slow. The backend says it's fine. The frontend says it's fine. But the user is watching a spinner. Let's find out who did it.">
+  <meta property="og:image" content="https://tracelens.site/favicon-128.png">
+  <meta property="og:site_name" content="TraceLens">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Why Is My API Taking 3 Seconds? A Detective Story">
+  <meta name="twitter:description" content="Your API is slow. Let's find out exactly where the time is going using Chrome DevTools timing waterfall.">
+  <meta name="twitter:image" content="https://tracelens.site/favicon-128.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Why Is My API Taking 3 Seconds? A Detective Story",
+    "description": "Your API is slow. The backend team says it's fine. The frontend team says it's fine. But the user is watching a spinner. Let's find out who did it.",
+    "url": "https://tracelens.site/blog/why-is-my-api-slow-debugging-guide/",
+    "datePublished": "2026-03-15",
+    "dateModified": "2026-03-15",
+    "author": { "@type": "Person", "name": "Siddharthachuahan9" },
+    "publisher": { "@type": "Organization", "name": "TraceLens", "url": "https://tracelens.site" }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I find out why my API is slow?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Open Chrome DevTools, go to the Network tab, click the slow request, and look at the Timing tab. The waterfall shows DNS lookup, TCP connection, SSL handshake, TTFB (server wait), and content download times. Whichever phase is longest is where the problem lives."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is TTFB and why is it high?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "TTFB stands for Time To First Byte — it's how long the server takes to start sending a response after receiving the request. High TTFB usually means a slow database query, an N+1 query problem, a cold serverless function, or an overloaded server."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What causes slow API calls?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The most common causes are: slow database queries (check server wait time in the timing waterfall), N+1 query problems, cold starts on serverless functions, large response payloads, missing database indexes, and downstream service calls that chain together."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 40px 24px 100px; }
+    .article-back { display: inline-flex; align-items: center; gap: 6px; color: var(--c8); font-size: .88rem; margin-bottom: 40px; transition: color .2s; }
+    .article-back:hover { color: var(--amber); }
+    .article-tag { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--amber); background: var(--amber-dim); border-radius: 4px; padding: 3px 8px; margin-bottom: 20px; }
+    .article-title { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; color: var(--cW); line-height: 1.25; margin-bottom: 16px; }
+    .article-meta { display: flex; align-items: center; gap: 16px; font-size: .85rem; color: var(--c7); margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--c3); }
+    .article-body h2 { font-size: 1.5rem; font-weight: 700; color: var(--cW); margin: 52px 0 16px; line-height: 1.3; }
+    .article-body h3 { font-size: 1.15rem; font-weight: 600; color: var(--cW); margin: 36px 0 12px; }
+    .article-body p { color: var(--c9); line-height: 1.8; margin-bottom: 18px; font-size: 1rem; }
+    .article-body ul, .article-body ol { padding-left: 24px; margin-bottom: 18px; }
+    .article-body li { color: var(--c9); line-height: 1.8; margin-bottom: 8px; font-size: 1rem; }
+    .article-body strong { color: var(--cW); font-weight: 600; }
+    .article-body code { font-family: var(--mono); font-size: .88em; background: var(--c3); color: var(--amber); padding: 2px 6px; border-radius: 4px; }
+    .article-body a { color: var(--amber); text-decoration: underline; text-underline-offset: 3px; }
+    .article-body blockquote { border-left: 3px solid var(--amber); margin: 28px 0; padding: 12px 20px; background: var(--c2); border-radius: 0 8px 8px 0; }
+    .article-body blockquote p { margin: 0; color: var(--c9); font-style: italic; }
+    .callout { background: var(--c2); border: 1px solid var(--c3); border-radius: 10px; padding: 20px 24px; margin: 28px 0; }
+    .callout-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--amber); margin-bottom: 8px; }
+    .callout p { margin: 0; font-size: .93rem; color: var(--c9); line-height: 1.7; }
+    .waterfall { background: var(--c2); border: 1px solid var(--c3); border-radius: 10px; padding: 20px 24px; margin: 28px 0; font-family: var(--mono); font-size: .83rem; }
+    .waterfall-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .waterfall-label { width: 120px; color: var(--c8); font-size: .78rem; flex-shrink: 0; }
+    .waterfall-bar-wrap { flex: 1; height: 14px; background: var(--c3); border-radius: 3px; overflow: hidden; }
+    .waterfall-bar { height: 100%; border-radius: 3px; }
+    .bar-dns { background: var(--purple); width: 2%; }
+    .bar-tcp { background: var(--blue); width: 3%; }
+    .bar-ssl { background: var(--yellow); width: 4%; }
+    .bar-wait { background: var(--red); width: 78%; }
+    .bar-download { background: var(--green); width: 13%; }
+    .waterfall-time { width: 50px; text-align: right; color: var(--c9); font-size: .78rem; flex-shrink: 0; }
+    .suspect-card { background: var(--c2); border: 1px solid var(--c3); border-radius: 12px; padding: 22px 26px; margin: 24px 0; }
+    .suspect-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .suspect-num { width: 32px; height: 32px; border-radius: 50%; background: var(--amber-dim); border: 1px solid var(--amber-glow); display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; color: var(--amber); flex-shrink: 0; }
+    .suspect-name { font-weight: 700; color: var(--cW); font-size: 1rem; }
+    .suspect-card p { margin: 0; font-size: .9rem; color: var(--c8); line-height: 1.7; }
+    .verdict { background: rgba(232,160,32,.07); border: 1px solid var(--amber-glow); border-radius: 10px; padding: 20px 24px; margin: 32px 0; }
+    .verdict strong { color: var(--amber); display: block; margin-bottom: 6px; font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; }
+    .verdict p { color: var(--cW); margin: 0; font-size: .95rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <span class="nav-logo">T</span>
+        <span class="nav-name">TraceLens</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#how-it-works">How It Works</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://github.com/Siddharthachuahan9/TRACELENS" class="nav-gh" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="article-wrap">
+    <a href="/blog/" class="article-back">← Back to Blog</a>
+
+    <span class="article-tag">Performance</span>
+    <h1 class="article-title">Why Is My API Taking 3 Seconds? A Detective Story</h1>
+
+    <div class="article-meta">
+      <span>March 15, 2026</span>
+      <span>·</span>
+      <span>7 min read</span>
+      <span>·</span>
+      <span>Performance, DevTools, API Debugging</span>
+    </div>
+
+    <div class="article-body">
+
+      <p>The user opens the dashboard. A spinner appears. Three seconds pass. The data loads. They don't say anything yet, but they've already mentally filed a complaint. After this happens three more times, they file an actual complaint.</p>
+
+      <p>Now it's your problem.</p>
+
+      <p>You open the Network tab. The request is right there — <code>GET /api/v1/analytics/dashboard</code> — sitting at 2,847ms like it has no idea what it's done. You take this personally. You click on it. And this is where most people stop, because the Timing tab looks like this:</p>
+
+      <div class="waterfall">
+        <div class="waterfall-row">
+          <span class="waterfall-label">DNS Lookup</span>
+          <div class="waterfall-bar-wrap"><div class="waterfall-bar bar-dns"></div></div>
+          <span class="waterfall-time">8ms</span>
+        </div>
+        <div class="waterfall-row">
+          <span class="waterfall-label">TCP</span>
+          <div class="waterfall-bar-wrap"><div class="waterfall-bar bar-tcp"></div></div>
+          <span class="waterfall-time">12ms</span>
+        </div>
+        <div class="waterfall-row">
+          <span class="waterfall-label">SSL</span>
+          <div class="waterfall-bar-wrap"><div class="waterfall-bar bar-ssl"></div></div>
+          <span class="waterfall-time">24ms</span>
+        </div>
+        <div class="waterfall-row">
+          <span class="waterfall-label">Server Wait</span>
+          <div class="waterfall-bar-wrap"><div class="waterfall-bar bar-wait"></div></div>
+          <span class="waterfall-time">2,741ms</span>
+        </div>
+        <div class="waterfall-row">
+          <span class="waterfall-label">Download</span>
+          <div class="waterfall-bar-wrap"><div class="waterfall-bar bar-download"></div></div>
+          <span class="waterfall-time">62ms</span>
+        </div>
+      </div>
+
+      <p>Most people see this and think "the API is slow." That's correct but useless. The timing waterfall is telling you something much more specific — if you know how to read it.</p>
+
+      <h2>The waterfall is your map. Here's how to read it.</h2>
+
+      <p>Every HTTP request travels through several phases before you get your data back. Each phase can be slow for a completely different reason. Knowing which phase is the bottleneck points you directly at the culprit.</p>
+
+      <h3>DNS Lookup</h3>
+      <p>Translating the domain name into an IP address. Should be under 20ms. If it's taking hundreds of milliseconds, your DNS provider is slow or the domain isn't cached. This is almost never the cause of a 3-second API call — but it's a red flag for the infrastructure setup.</p>
+
+      <h3>TCP Connection</h3>
+      <p>Opening a connection to the server. Fast on modern infrastructure with connection pooling. If this is slow, the server is far away geographically, or you're establishing a new connection on every request instead of reusing them.</p>
+
+      <h3>SSL Handshake</h3>
+      <p>Negotiating the encrypted connection. Should be under 100ms. Consistently high SSL times usually mean the server's TLS configuration is outdated, or again — too far away physically.</p>
+
+      <h3>Server Wait (TTFB)</h3>
+      <p>This is where it gets interesting. Server Wait — also called Time To First Byte — is how long the server spent thinking before it started sending back a response. <strong>If this is high, the problem is on the server.</strong> The request arrived. The server received it. Then it just... sat there doing things.</p>
+
+      <h3>Content Download</h3>
+      <p>How long it took to transfer the response body from server to browser. If this is high, the response is large. You're downloading a lot of data.</p>
+
+      <h2>The suspects, ranked by how often they did it</h2>
+
+      <div class="suspect-card">
+        <div class="suspect-header">
+          <div class="suspect-num">1</div>
+          <span class="suspect-name">The Slow Database Query</span>
+        </div>
+        <p><strong>Evidence:</strong> Server Wait is high (90%+ of total time). Download is fast. The request arrives, and then the server waits for the database to come back before it can send anything.<br><br><strong>How to confirm:</strong> Add query logging to your backend. Look for queries running over 100ms. The analytics dashboard endpoint is a classic offender — it's probably doing aggregations across large tables with no index on the date column.<br><br><strong>Fix:</strong> Add indexes. Cache the result. Pre-aggregate on a schedule instead of computing on every request.</p>
+      </div>
+
+      <div class="suspect-card">
+        <div class="suspect-header">
+          <div class="suspect-num">2</div>
+          <span class="suspect-name">The N+1 Query</span>
+        </div>
+        <p><strong>Evidence:</strong> Server Wait is high. You're fetching a list of items, and it's slow proportional to how many items there are.<br><br><strong>How to confirm:</strong> Enable query logging and count the queries. If fetching 50 users fires 51 database queries (1 to get the list, 50 to get each user's data), you have an N+1.<br><br><strong>Fix:</strong> Use JOINs or eager loading. Fetch everything in one query, not one-per-item.</p>
+      </div>
+
+      <div class="suspect-card">
+        <div class="suspect-header">
+          <div class="suspect-num">3</div>
+          <span class="suspect-name">The Cold Serverless Function</span>
+        </div>
+        <p><strong>Evidence:</strong> The first request of the day takes 3 seconds. Subsequent requests take 80ms. Classic cold start. The function container wasn't running and had to boot up before it could handle the request.<br><br><strong>How to confirm:</strong> Time the first request after a period of inactivity vs. immediate follow-up requests. If there's a huge gap, it's cold starts.<br><br><strong>Fix:</strong> Use provisioned concurrency (AWS Lambda), keep-alive pings, or move latency-sensitive endpoints to a persistent server.</p>
+      </div>
+
+      <div class="suspect-card">
+        <div class="suspect-header">
+          <div class="suspect-num">4</div>
+          <span class="suspect-name">The Chained Downstream Calls</span>
+        </div>
+        <p><strong>Evidence:</strong> Server Wait is high. Your service is healthy. But to respond, it has to call three other services first — and one of them is having a bad day.<br><br><strong>How to confirm:</strong> Add distributed tracing. Look at which downstream call takes the longest. This is where microservices architectures get humbling.<br><br><strong>Fix:</strong> Parallelize calls where possible. Cache responses from slow dependencies. Add timeouts so one slow service doesn't hold up everything.</p>
+      </div>
+
+      <div class="suspect-card">
+        <div class="suspect-header">
+          <div class="suspect-num">5</div>
+          <span class="suspect-name">The Giant Response</span>
+        </div>
+        <p><strong>Evidence:</strong> Server Wait is fast but Content Download is high. The server responded quickly but sent back an enormous payload — 5MB of JSON for a dashboard that displays 10 numbers.<br><br><strong>How to confirm:</strong> Check the response size in the Network tab. Click the request, look at the Response tab. If you're drowning in data the UI never uses, that's your problem.<br><br><strong>Fix:</strong> Pagination. Field filtering. Only return what the frontend actually needs.</p>
+      </div>
+
+      <h2>The cascade problem nobody talks about</h2>
+
+      <p>Sometimes it's not one slow API call. It's five medium-slow ones that fire sequentially — each one waiting for the previous to finish before starting. The dashboard loads the user, then loads their organisation, then loads their permissions, then loads their settings, then loads their data. Five requests, each 600ms. Total: 3 seconds.</p>
+
+      <p>Individually none of them looks alarming. Together they've killed your UX. This is called a request cascade and it's one of the hardest performance problems to spot because no single request is obviously the culprit.</p>
+
+      <div class="callout">
+        <div class="callout-title">How TraceLens catches cascades</div>
+        <p><a href="https://tracelens.site">TraceLens</a> watches for 3 or more consecutive slow requests and fires a cascade alert automatically. It also groups requests that happen within 800ms of each other into burst groups — so you can see at a glance that your dashboard load is actually 7 chained requests, not one.</p>
+      </div>
+
+      <h2>The checklist when your API is slow</h2>
+
+      <ol>
+        <li><strong>Open the timing waterfall.</strong> Which phase dominates?</li>
+        <li><strong>Server Wait &gt; 80% of total?</strong> The problem is server-side. Check database queries first.</li>
+        <li><strong>Download &gt; 50% of total?</strong> The response is too large. Add pagination or field filtering.</li>
+        <li><strong>DNS or TCP slow?</strong> Infrastructure/geography problem. Consider a CDN or closer region.</li>
+        <li><strong>Intermittently slow, not always?</strong> Cold starts or resource contention. Check serverless config.</li>
+        <li><strong>Multiple requests all slow?</strong> Cascade problem. Look for sequential chaining that could be parallelized.</li>
+      </ol>
+
+      <div class="verdict">
+        <strong>The golden rule</strong>
+        <p>The timing waterfall tells you <em>where</em> the time went. It doesn't tell you <em>why</em>. It's a map that points you to the right room — you still have to find the body yourself.</p>
+      </div>
+
+      <h2>FAQ</h2>
+
+      <h3>How do I find out why my API is slow?</h3>
+      <p>Open Chrome DevTools → Network tab → click the slow request → Timing tab. Read the waterfall. Server Wait high = database or backend logic problem. Download high = large response. DNS/TCP high = infrastructure/geography problem.</p>
+
+      <h3>What is TTFB and why does it matter?</h3>
+      <p>TTFB (Time To First Byte) is how long the server took to start responding. It's the most important number for API performance because it captures all the server-side work — database queries, computation, downstream calls — before a single byte reaches the browser. High TTFB = slow backend. Full stop.</p>
+
+      <h3>My API is fast in development but slow in production. Why?</h3>
+      <p>Classic causes: production database has more data (queries that were fast on 100 rows are slow on 10 million), production has different infrastructure (cold serverless functions, different region), or production traffic causes resource contention that didn't exist locally. Always test with production-scale data.</p>
+
+      <hr style="border:none;border-top:1px solid var(--c3);margin:48px 0 32px;">
+
+      <p>The spinner is not a mystery. It's evidence. The timing waterfall is your witness. You just need to know how to ask the right questions.</p>
+
+      <p><a href="https://tracelens.site">TraceLens</a> is a free Chrome DevTools extension that adds timing waterfall visualization, cascade detection, and automated diagnosis to every request you capture — all inside DevTools, no proxy required. <a href="https://github.com/Siddharthachuahan9/TRACELENS" target="_blank" rel="noopener">Open source on GitHub.</a></p>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="nav-logo">T</span>
+          <span class="nav-name">TraceLens</span>
+        </div>
+        <p class="footer-desc">See what your APIs are really doing.<br>Open source. Read-only. Browser-native.</p>
+        <div class="footer-links">
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS" target="_blank" rel="noopener">GitHub</a>
+          <a href="/blog/">Blog</a>
+          <a href="https://github.com/Siddharthachuahan9/TRACELENS/issues" target="_blank" rel="noopener">Issues</a>
+        </div>
+        <p class="footer-copy">MIT License</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
