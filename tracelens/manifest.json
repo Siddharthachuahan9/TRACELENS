@@ -10,7 +10,12 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "sidePanel"],
+  "host_permissions": [
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*"
+  ],
+  "side_panel": { "default_path": "sidepanel.html" },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
