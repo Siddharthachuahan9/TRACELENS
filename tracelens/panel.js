@@ -454,7 +454,7 @@ function loadSettings() {
       GQL_NAMES = s.gqlNames !== false;
       CASCADE_ENABLED = s.cascade !== false;
       TOKEN_COUNTDOWN = s.tokenCountdown !== false;
-      THEME = s.theme || 'dark';
+      THEME = s.theme === 'light' ? 'light' : 'dark'; // older builds had midnight and terminal; they map to dark
       BASELINE_ENABLED = !!s.baselineEnabled;
       BASELINE_PCT = s.baselinePct || 50;
       performanceBaseline = s.performanceBaseline || {};
@@ -470,7 +470,7 @@ function loadSettings() {
 }
 
 // --------------- Theme Toggle ---------------
-const THEMES = ['dark', 'light', 'midnight', 'terminal'];
+const THEMES = ['dark', 'light'];
 
 function applyTheme() {
   document.body.classList.remove('theme-light', 'theme-midnight', 'theme-terminal');
@@ -1995,7 +1995,7 @@ function initSettingsListeners() {
   });
   document.querySelectorAll('.theme-swatch').forEach(s => {
     s.addEventListener('click', () => {
-      THEME = s.dataset.theme;
+      THEME = s.dataset.theme === 'light' ? 'light' : 'dark';
       applyTheme();
       saveSetting('theme', THEME);
     });
