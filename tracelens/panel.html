@@ -6,7 +6,7 @@
   <title>TraceLens</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="panel.css">
 </head>
 <body>
@@ -113,20 +113,12 @@
     <div class="settings-body">
       <div class="theme-swatches">
         <button class="theme-swatch" data-theme="dark">
-          <span class="swatch-dot" style="background:linear-gradient(135deg,#0f1114 50%,#e8a020 50%)"></span>
+          <span class="swatch-dot" style="background:#0f0f0f;border-color:#474747"></span>
           <span class="swatch-label">Dark</span>
         </button>
         <button class="theme-swatch" data-theme="light">
-          <span class="swatch-dot" style="background:linear-gradient(135deg,#ebedf0 50%,#c07810 50%)"></span>
+          <span class="swatch-dot" style="background:#ffffff;border-color:#c8c8c8"></span>
           <span class="swatch-label">Light</span>
-        </button>
-        <button class="theme-swatch" data-theme="midnight">
-          <span class="swatch-dot" style="background:linear-gradient(135deg,#0b0f1e 50%,#4ba6d4 50%)"></span>
-          <span class="swatch-label">Midnight</span>
-        </button>
-        <button class="theme-swatch" data-theme="terminal">
-          <span class="swatch-dot" style="background:linear-gradient(135deg,#080e09 50%,#00ff88 50%)"></span>
-          <span class="swatch-label">Terminal</span>
         </button>
       </div>
       <label class="setting-row">
@@ -238,7 +230,7 @@
       <div class="shortcut-row"><kbd>R</kbd><span>Copy cURL</span></div>
       <div class="shortcut-row"><kbd>C</kbd><span>Copy report</span></div>
       <div class="shortcut-row"><kbd>D</kbd><span>Toggle domain grouping</span></div>
-      <div class="shortcut-row"><kbd>T</kbd><span>Cycle theme (Dark → Light → Midnight → Terminal)</span></div>
+      <div class="shortcut-row"><kbd>T</kbd><span>Switch between dark and light</span></div>
       <div class="shortcut-row"><kbd>?</kbd><span>Toggle this overlay</span></div>
       <button class="btn btn-outline shortcuts-close" id="shortcuts-close-btn">Close</button>
     </div>
