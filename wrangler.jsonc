@@ -1,12 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tracelens",
+  "main": "worker.js",
   "compatibility_date": "2025-09-27",
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "docs"
+    "directory": "docs",
+    "binding": "ASSETS",
+    "run_worker_first": true
   },
   "compatibility_flags": [
     "nodejs_compat"
