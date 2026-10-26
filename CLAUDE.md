@@ -240,13 +240,14 @@ Only `storage` permission is requested — for persisting settings and annotatio
 The website (https://tracelens.site) is hosted on **Cloudflare Workers**:
 
 - `wrangler.jsonc` defines the deployment config
+- `worker.js` is the site Worker: it serves `docs/` and the markdown twins for AI agents (`/index.md`, `/blog.md`, `/blog/<slug>.md`, `/llms.txt`), negotiating on the `Accept` header and adding the `Link: <…>; rel="alternate"; type="text/markdown"` header to HTML pages (Dualmark AEO Spec 1.0). It has no dependencies. When a page's copy changes, update its `.md` twin too
 - Assets in `docs/` folder (index.html, styles.css, script.js) are served as static content
 - Blog posts and SEO content (sitemap.xml, robots.txt, structured data) are in `docs/blog/`
 
 To deploy:
 
 ```bash
-wrangler publish
+wrangler deploy
 ```
 
 (Requires Cloudflare account and wrangler CLI setup.)

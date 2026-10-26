@@ -1,0 +1,21 @@
+# TraceLens
+
+> A read-only API debugger inside Chrome DevTools. A free, open-source extension that adds a tab beside Console and Network, groups every request by the click that caused it, times each phase, decodes JWTs and writes the incident report.
+
+Every page on this site has a markdown twin at the same URL with `.md` appended (`/` is `/index.md`). Send `Accept: text/markdown` to receive the twin directly.
+
+## Pages
+
+- [Home](https://tracelens.site/index.md): what TraceLens does, the sample burst and incident report, every feature, the full manifest with permissions asked for and not asked for, and the sixty-second install.
+- [Blog index](https://tracelens.site/blog.md): all articles.
+
+## Articles
+
+- [Your JWT Is Expired and That's Why Everything Is on Fire](https://tracelens.site/blog/jwt-expired-debugging-chrome-devtools.md): decoding JWTs, the five JWT problems behind most 401s, and the checklist.
+- [Why Is My API Taking 3 Seconds? A Detective Story](https://tracelens.site/blog/why-is-my-api-slow-debugging-guide.md): reading the timing waterfall phase by phase, the five usual suspects, and request cascades.
+- [TraceLens vs Requestly vs Proxyman vs Charles Proxy: Best API Debugger in 2026](https://tracelens.site/blog/tracelens-vs-requestly-proxyman-charles-api-debugger.md): feature table and verdicts for seven API debugging tools.
+
+## Source
+
+- [GitHub repository](https://github.com/Siddharthachuahan9/TRACELENS): MIT licence, unminified, no build step.
+- [manifest.json](https://github.com/Siddharthachuahan9/TRACELENS/blob/main/tracelens/manifest.json): the permissions the extension asks for.
